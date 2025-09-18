@@ -320,7 +320,7 @@
             geminiQueryBtn.disabled = true;
             geminiResultContainer.innerHTML = `<p class="italic">Đang hỏi Gemini...</p>`;
 
-            const prompt = `Phân tích chi tiết về từ "${word}" trong ${langName}. Cung cấp các thông tin sau theo định dạng Markdown:\n- **Trọng âm:** (Ghi rõ âm tiết nhấn trọng âm)\n- **Ví dụ:** (Cung cấp 2-3 câu ví dụ có cả bản gốc và bản dịch tiếng Việt)\n- **Ngữ pháp:** (Loại từ, cách dùng cơ bản, các lưu ý nếu có)`;
+            const prompt = `Phân tích chi tiết về từ "${word}" trong ${langName}. Cung cấp các thông tin sau theo định dạng Markdown:\n- **Trọng âm:** (Ghi rõ âm tiết nhấn trọng âm)\n- **Nghĩa** (Ghi ngắn gọn các nghĩa cửa từ)\n **Ví dụ:** (Cung cấp 2-3 câu ví dụ có cả bản gốc và bản dịch tiếng Việt)\n- **Ngữ pháp:** (Loại từ, cách dùng cơ bản, các lưu ý nếu có)`;
             const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
             try {
