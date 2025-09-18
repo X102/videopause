@@ -40,6 +40,22 @@
             <p class="text-gray-400 mt-2">Tải video và phụ đề SRT lên, sau đó nhấn vào một từ để tra cứu.</p>
         </header>
 
+        <!-- Giới thiệu và Hướng dẫn -->
+        <div class="mb-8 p-4 bg-gray-800 border border-blue-500/50 rounded-lg text-gray-300">
+            <h2 class="text-xl font-bold mb-3 text-blue-300"><i class="fas fa-info-circle mr-2"></i>Giới thiệu & Hướng dẫn nhanh</h2>
+            <p class="mb-2">Đây là công cụ giúp bạn học ngoại ngữ bằng cách xem video với phụ đề tương tác. Bạn có thể nhấn vào từng từ để tra cứu nghĩa, phát âm, và xem ví dụ trực tiếp.</p>
+            <ul class="list-disc list-inside space-y-1 mb-3">
+                <li><b>Bước 1:</b> Tải lên video và file phụ đề (.srt) của bạn.</li>
+                <li><b>Bước 2:</b> Chọn đúng ngôn ngữ của phụ đề.</li>
+                <li><b>Bước 3:</b> Nhấn vào bất kỳ từ nào trong phụ đề để bắt đầu tra cứu.</li>
+            </ul>
+            <p class="mt-2">
+                <i class="fas fa-magic-wand-sparkles mr-2 text-yellow-400"></i>
+                <b>Chưa có file phụ đề?</b> Bạn có thể tự động tạo phụ đề từ video bằng công cụ AI tại đây: 
+                <a href="https://colab.research.google.com/drive/1itmzYafvZ5zzhcPT8cnbbFvpLOiH5wzI?usp=sharing" target="_blank" class="font-bold text-blue-400 hover:underline">Tạo Sub tự động (Google Colab)</a>.
+            </p>
+        </div>
+
         <div class="flex flex-col lg:flex-row gap-8">
             <!-- Cột điều khiển và lịch sử -->
             <aside class="lg:w-1/3 bg-gray-800 p-6 rounded-lg shadow-lg">
@@ -137,9 +153,7 @@
         let wasVideoPlaying = false;
 
         function parseSRT(srtText) {
-            // *** FIX: Normalize line endings to handle Windows-style (\r\n) files ***
             const normalizedText = srtText.replace(/\r\n/g, '\n');
-            
             const pattern = /(\d+)\n([\d:,]+)\s-->\s([\d:,]+)\n([\s\S]*?(?=\n{2,}|$))/g;
             const subs = [];
             let match;
@@ -187,7 +201,6 @@
                 return;
             }
 
-            // Display current subtitle with interactive words
             const currentSub = subtitles[currentSubtitleIndex];
             currentSubtitleDiv.innerHTML = '';
             const words = currentSub.text.split(/(\s+)/);
@@ -203,7 +216,6 @@
                 }
             });
 
-            // Display previous and next subtitles
             prevSubtitleDiv.textContent = (currentSubtitleIndex > 0) ? subtitles[currentSubtitleIndex - 1].text : '';
             nextSubtitleDiv.textContent = (currentSubtitleIndex < subtitles.length - 1) ? subtitles[currentSubtitleIndex + 1].text : '';
         }
