@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trình Xem Video và Tra Cứu Phụ Đề</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Tùy chỉnh thanh cuộn */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #2d3748; }
+        ::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #718096; }
+        /* Hiệu ứng từ trong phụ đề */
+        .subtitle-word {
+            cursor: pointer;
+            transition: color 0.2s, background-color 0.2s;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .subtitle-word:hover {
+            background-color: #4a5568;
+            color: #f7fafc;
+        }
+        video { display: block; margin: 0 auto; }
+        /* Style cho phụ đề theo ngữ cảnh */
+        #subtitleContainer {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 font-sans leading-normal tracking-normal">
+
+    <div class="container mx-auto p-4 lg:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl lg:text-4xl font-bold text-white">Học Ngoại Ngữ Qua Video</h1>
+            <p class="text-gray-400 mt-2">Tải video và phụ đề SRT lên, sau đó nhấn vào một từ để tra cứu.</p>
+        </header>
+
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Cột điều khiển và lịch sử -->
+            <aside class="lg:w-1/3 bg-gray-800 p-6 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-semibold mb-4 border-b-2 border-gray-700 pb-2">Bảng Điều Khiển</h2>
+                
+                <div class="mb-4">
+                    <label class="block mb-2 font-bold" for="videoUrl">1. Tải Video (Link hoặc File)</label>
+                    <input type="text" id="videoUrl" placeholder="Dán link video (MP4, WebM,...)" class="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <span class="text-center block my-2 text-gray-500">hoặc</span>
+                    <input type="file" id="videoFile" accept="video/*" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block mb-2 font-bold" for="srtFile">2. Tải File Phụ Đề (.srt)</label>
+                    <input type="file" id="srtFile" accept=".srt" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700">
+                </div>
+
+                <div class="mb-6">
+                    <label for="languageSelect" class="block mb-2 font-bold">3. Chọn Ngôn Ngữ Phụ Đề</label>
+                    <select id="languageSelect" class="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="en-US">Tiếng Anh (English)</option>
+                        <option value="ru-RU">Tiếng Nga (Русский)</option>
+                        <option value="zh-CN">Tiếng Trung (中文)</option>
+                        <option value="fr-FR">Tiếng Pháp (Français)</option>
+                        <option value="de-DE">Tiếng Đức (Deutsch)</option>
+                        <option value="ja-JP">Tiếng Nhật (日本語)</option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label for="geminiApiKey" class="block mb-2 font-bold">4. Gemini API Key (Tùy chọn)</label>
+                    <div class="flex gap-2">
+                        <input type="password" id="geminiApiKey" placeholder="Nhập API Key của bạn" class="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button id="saveApiKeyBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Lưu</button>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-xl font-semibold mb-3 border-b-2 border-gray-700 pb-2">Lịch Sử Tra Cứu</h3>
+                    <div id="history" class="h-48 overflow-y-auto bg-gray-900 p-3 rounded">
+                        <p class="text-gray-500 italic">Chưa có từ nào được tra...</p>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="lg:w-2/3">
+                <div class="bg-black rounded-lg shadow-lg overflow-hidden">
+                    <video id="videoPlayer" class="w-full h-auto" controls></video>
+                </div>
+                <div id="subtitleContainer" class="mt-4 p-4 bg-gray-800 rounded-lg text-center min-h-[150px] flex flex-col items-center justify-center">
+                    <div id="prevSubtitle" class="text-gray-500 text-lg font-mono opacity-60 h-8"></div>
+                    <div id="currentSubtitle" class="text-gray-200 text-2xl font-mono min-h-[40px]">Phụ đề sẽ hiển thị ở đây...</div>
+                    <div id="nextSubtitle" class="text-gray-500 text-lg font-mono opacity-60 h-8"></div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal tra cứu từ -->
+    <div id="dictionaryModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-gray-800 rounded-lg shadow-2xl w-full max-w-2xl text-white relative max-h-[95vh] flex flex-col border border-gray-600">
+             <div class="flex items-center justify-between p-4 bg-gray-700 rounded-t-lg">
+                <div class="flex items-center">
+                    <h2 class="text-2xl font-bold">Tra cứu: "<span id="lookupWord" class="text-blue-400"></span>"</h2>
+                    <button id="pronounceBtn" class="ml-4 p-2 bg-blue-600 hover:bg-blue-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"><i class="fas fa-volume-up"></i></button>
+                </div>
+                <button id="closeModal" class="text-3xl text-gray-500 hover:text-white">&times;</button>
+            </div>
+            <div id="modalContent" class="p-6 space-y-4 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <script>
+        const videoPlayer = document.getElementById('videoPlayer');
+        const videoUrlInput = document.getElementById('videoUrl');
+        const videoFileInput = document.getElementById('videoFile');
+        const srtFileInput = document.getElementById('srtFile');
+        const subtitleContainer = document.getElementById('subtitleContainer');
+        const prevSubtitleDiv = document.getElementById('prevSubtitle');
+        const currentSubtitleDiv = document.getElementById('currentSubtitle');
+        const nextSubtitleDiv = document.getElementById('nextSubtitle');
+        const languageSelect = document.getElementById('languageSelect');
+        const historyContainer = document.getElementById('history');
+        const modal = document.getElementById('dictionaryModal');
+        const closeModalBtn = document.getElementById('closeModal');
+        const lookupWordSpan = document.getElementById('lookupWord');
+        const pronounceBtn = document.getElementById('pronounceBtn');
+        const modalContent = document.getElementById('modalContent');
+        const geminiApiKeyInput = document.getElementById('geminiApiKey');
+        const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+
+        let subtitles = [];
+        let savedWords = new Set();
+        let currentSubtitleIndex = -1;
+        let wasVideoPlaying = false;
+
+        function parseSRT(srtText) {
+            // *** FIX: Normalize line endings to handle Windows-style (\r\n) files ***
+            const normalizedText = srtText.replace(/\r\n/g, '\n');
+            
+            const pattern = /(\d+)\n([\d:,]+)\s-->\s([\d:,]+)\n([\s\S]*?(?=\n{2,}|$))/g;
+            const subs = [];
+            let match;
+            while ((match = pattern.exec(normalizedText)) !== null) {
+                subs.push({
+                    id: parseInt(match[1], 10),
+                    startTime: srtTimeToSeconds(match[2]),
+                    endTime: srtTimeToSeconds(match[3]),
+                    text: match[4].replace(/\n/g, ' ').trim()
+                });
+            }
+            return subs;
+        }
+
+        function srtTimeToSeconds(timeStr) {
+            const parts = timeStr.split(/[:,]/);
+            return parseInt(parts[0], 10) * 3600 +
+                   parseInt(parts[1], 10) * 60 +
+                   parseInt(parts[2], 10) +
+                   parseInt(parts[3], 10) / 1000;
+        }
+        
+        function updateSubtitle() {
+            const currentTime = videoPlayer.currentTime;
+            let foundSubIndex = -1;
+
+            for (let i = 0; i < subtitles.length; i++) {
+                if (currentTime >= subtitles[i].startTime && currentTime <= subtitles[i].endTime) {
+                    foundSubIndex = i;
+                    break;
+                }
+            }
+
+            if (foundSubIndex !== currentSubtitleIndex) {
+                 currentSubtitleIndex = foundSubIndex;
+                 displaySubtitleContext();
+            }
+        }
+
+        function displaySubtitleContext() {
+            if (currentSubtitleIndex === -1) {
+                prevSubtitleDiv.textContent = '';
+                currentSubtitleDiv.innerHTML = '<p class="text-gray-500">Phụ đề sẽ hiển thị ở đây...</p>';
+                nextSubtitleDiv.textContent = '';
+                return;
+            }
+
+            // Display current subtitle with interactive words
+            const currentSub = subtitles[currentSubtitleIndex];
+            currentSubtitleDiv.innerHTML = '';
+            const words = currentSub.text.split(/(\s+)/);
+            words.forEach(word => {
+                if (word.trim() !== '') {
+                    const wordSpan = document.createElement('span');
+                    wordSpan.textContent = word;
+                    wordSpan.className = 'subtitle-word';
+                    wordSpan.onclick = () => handleWordClick(word);
+                    currentSubtitleDiv.appendChild(wordSpan);
+                } else {
+                    currentSubtitleDiv.appendChild(document.createTextNode(word));
+                }
+            });
+
+            // Display previous and next subtitles
+            prevSubtitleDiv.textContent = (currentSubtitleIndex > 0) ? subtitles[currentSubtitleIndex - 1].text : '';
+            nextSubtitleDiv.textContent = (currentSubtitleIndex < subtitles.length - 1) ? subtitles[currentSubtitleIndex + 1].text : '';
+        }
+
+        function handleWordClick(rawWord) {
+            wasVideoPlaying = !videoPlayer.paused;
+            videoPlayer.pause();
+            
+            const word = rawWord.trim().replace(/[.,!?;:"“”]/g, '').toLowerCase();
+            if (!word) return;
+            showDictionaryModal(word);
+            saveWordToHistory(word);
+        }
+
+        function showDictionaryModal(word) {
+            const lang = languageSelect.value;
+            const langName = languageSelect.options[languageSelect.selectedIndex].text;
+            const encodedWord = encodeURIComponent(word);
+
+            lookupWordSpan.textContent = word;
+            pronounceBtn.onclick = () => {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(word);
+                utterance.lang = lang;
+                utterance.onerror = (event) => {
+                    console.error('SpeechSynthesis Error:', event.error);
+                    alert(`Lỗi phát âm: Không thể phát âm từ này. Vui lòng kiểm tra xem trình duyệt của bạn có hỗ trợ và đã cài đặt gói giọng nói cho "${langName}" chưa. Lỗi: ${event.error}`);
+                };
+                window.speechSynthesis.speak(utterance);
+            };
+            
+            const youglishLangMap = {
+                'en-US': 'english',
+                'ru-RU': 'russian',
+                'zh-CN': 'chinese',
+                'fr-FR': 'french',
+                'de-DE': 'german',
+                'ja-JP': 'japanese'
+            };
+            const youglishLang = youglishLangMap[lang] || 'english';
+            const youglishLink = `https://youglish.com/pronounce/${encodedWord}/${youglishLang}`;
+
+            modalContent.innerHTML = `
+                <div>
+                    <h3 class="font-bold text-lg mb-2 text-blue-300">Tra cứu nhanh</h3>
+                    <div class="space-y-2">
+                        <a href="https://translate.google.com/?sl=${lang.split('-')[0]}&tl=vi&text=${encodedWord}&op=translate" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-language mr-2 text-blue-400"></i> Mở Google Dịch (Việt)</a>
+                        <a href="${youglishLink}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fab fa-youtube mr-2 text-red-500"></i> Mở YouGlish (Phát âm trong ngữ cảnh)</a>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-bold text-lg text-purple-300">Tra cứu AI (Gemini)</h3>
+                        <button id="copyGeminiBtn" title="Sao chép nội dung" class="p-2 text-gray-400 hover:text-white"><i class="fas fa-copy"></i></button>
+                    </div>
+                    <button id="geminiQueryBtn" class="w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-robot mr-2"></i> Lấy thông tin (Trọng âm, ví dụ, ngữ pháp)
+                    </button>
+                    <div id="geminiResult" class="mt-2 p-3 bg-gray-900 rounded text-gray-300 whitespace-pre-wrap min-h-[50px]"></div>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg mb-2 text-yellow-300">Từ điển & liên kết khác</h3>
+                    <div id="externalLinks" class="space-y-2"></div>
+                </div>`;
+            
+            document.getElementById('geminiQueryBtn').addEventListener('click', () => queryGemini(word, langName));
+            document.getElementById('copyGeminiBtn').addEventListener('click', copyGeminiResult);
+
+            const externalLinksContainer = document.getElementById('externalLinks');
+            let links = '';
+            switch (lang) {
+                case 'ru-RU':
+                    links = `<a href="https://vtudien.com/nga-viet/dictionary/nghia-cua-tu-${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-book mr-2"></i> Tra VTuDien (Nga-Việt)</a>
+                             <a href="https://ru.wiktionary.org/wiki/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Wiktionary (Nga)</a>`;
+                    break;
+                case 'zh-CN':
+                    links = `<a href="https://vtudien.com/trung-viet/dictionary/nghia-cua-tu-${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-book mr-2"></i> Tra VTuDien (Trung-Việt)</a>
+                             <a href="https://hanzii.net/search/word/${encodedWord}?hl=vi" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-pen-fancy mr-2"></i> Tra Hanzii Dict</a>`;
+                    break;
+                case 'en-US':
+                default:
+                    links = `<a href="https://vtudien.com/anh-viet/dictionary/nghia-cua-tu-${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-book mr-2"></i> Tra VTuDien (Anh-Việt)</a>
+                             <a href="https://dictionary.cambridge.org/dictionary/english-vietnamese/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-graduation-cap mr-2"></i> Tra Cambridge Dictionary</a>`;
+                    break;
+            }
+            links += `<a href="https://www.google.com/search?q=${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fab fa-google mr-2"></i> Tra Google Search</a>`;
+            externalLinksContainer.innerHTML = links;
+            modal.classList.remove('hidden');
+        }
+
+        async function queryGemini(word, langName) {
+            const apiKey = localStorage.getItem('geminiApiKey');
+            const geminiResultContainer = document.getElementById('geminiResult');
+            const geminiQueryBtn = document.getElementById('geminiQueryBtn');
+
+            if (!apiKey) {
+                geminiResultContainer.innerHTML = `<p class="text-red-400">Vui lòng nhập và lưu Gemini API Key ở bảng điều khiển.</p>`;
+                return;
+            }
+
+            geminiQueryBtn.disabled = true;
+            geminiResultContainer.innerHTML = `<p class="italic">Đang hỏi Gemini...</p>`;
+
+            const prompt = `Phân tích chi tiết về từ "${word}" trong ${langName}. Cung cấp các thông tin sau theo định dạng Markdown:\n- **Trọng âm:** (Ghi rõ âm tiết nhấn trọng âm)\n- **Ví dụ:** (Cung cấp 2-3 câu ví dụ có cả bản gốc và bản dịch tiếng Việt)\n- **Ngữ pháp:** (Loại từ, cách dùng cơ bản, các lưu ý nếu có)`;
+            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error.message || `HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const text = data.candidates[0].content.parts[0].text;
+                geminiResultContainer.innerText = text;
+
+            } catch (error) {
+                console.error("Gemini API error:", error);
+                geminiResultContainer.innerHTML = `<p class="text-red-400">Đã xảy ra lỗi: ${error.message}</p>`;
+            } finally {
+                geminiQueryBtn.disabled = false;
+            }
+        }
+
+        function copyGeminiResult() {
+            const geminiResultContainer = document.getElementById('geminiResult');
+            const textToCopy = geminiResultContainer.innerText;
+            const copyButton = document.getElementById('copyGeminiBtn');
+
+            if (textToCopy && !textToCopy.includes('Đang hỏi Gemini...')) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    const originalIcon = copyButton.innerHTML;
+                    copyButton.innerHTML = `<i class="fas fa-check text-green-500"></i>`;
+                    setTimeout(() => {
+                        copyButton.innerHTML = originalIcon;
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Không thể sao chép: ', err);
+                    alert('Sao chép thất bại!');
+                });
+            }
+        }
+        
+        function saveWordToHistory(word) {
+            if (!savedWords.has(word)) {
+                savedWords.add(word);
+                updateHistoryUI();
+            }
+        }
+
+        function updateHistoryUI() {
+            if (savedWords.size === 0) {
+                historyContainer.innerHTML = '<p class="text-gray-500 italic">Chưa có từ nào được tra...</p>';
+                return;
+            }
+            historyContainer.innerHTML = '';
+            const wordList = document.createElement('div');
+            wordList.className = 'flex flex-wrap gap-2';
+            savedWords.forEach(word => {
+                const wordTag = document.createElement('span');
+                wordTag.textContent = word;
+                wordTag.className = 'bg-blue-600 text-white text-sm font-semibold px-2.5 py-1 rounded-full cursor-pointer hover:bg-blue-700';
+                wordTag.onclick = () => handleWordClick(word);
+                wordList.appendChild(wordTag);
+            });
+            historyContainer.appendChild(wordList);
+        }
+
+        function loadApiKey() {
+            const savedKey = localStorage.getItem('geminiApiKey');
+            if (savedKey) geminiApiKeyInput.value = savedKey;
+        }
+
+        function saveApiKey() {
+            const key = geminiApiKeyInput.value.trim();
+            if (key) {
+                localStorage.setItem('geminiApiKey', key);
+                alert('Đã lưu Gemini API Key!');
+            } else {
+                localStorage.removeItem('geminiApiKey');
+                alert('Đã xóa Gemini API Key!');
+            }
+        }
+        
+        function closeModal() {
+            modal.classList.add('hidden');
+            modalContent.innerHTML = ''; 
+            if (wasVideoPlaying) {
+                videoPlayer.play();
+            }
+        }
+
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', loadApiKey);
+        saveApiKeyBtn.addEventListener('click', saveApiKey);
+        
+        videoUrlInput.addEventListener('change', () => {
+            const url = videoUrlInput.value.trim();
+            if (url) { videoPlayer.src = url; videoFileInput.value = ''; }
+        });
+
+        videoFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const fileURL = URL.createObjectURL(file);
+                videoPlayer.src = fileURL;
+                videoUrlInput.value = '';
+            }
+        });
+
+        srtFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    subtitles = parseSRT(e.target.result);
+                    if (subtitles.length > 0) {
+                        alert(`Đã tải và xử lý thành công ${subtitles.length} dòng phụ đề.`);
+                    } else {
+                        alert('Lỗi: Không thể đọc được file phụ đề. Vui lòng kiểm tra lại định dạng file .srt.');
+                    }
+                    currentSubtitleIndex = -1;
+                };
+                reader.readAsText(file, 'UTF-8');
+            }
+        });
+
+        videoPlayer.addEventListener('timeupdate', updateSubtitle);
+        closeModalBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
+
