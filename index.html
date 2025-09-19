@@ -65,8 +65,7 @@
                     <ul class="list-disc list-inside space-y-1">
                         <li><b>Bước 1:</b> Tải video và file phụ đề (.srt).</li>
                         <li><b>Bước 2:</b> Chọn đúng ngôn ngữ của phụ đề.</li>
-                        <li><b>Bước 3:</b> Nhấn vào từ để tra cứu.</li>
-                        <li><b>Mẹo:</b> Với tiếng Trung/Nhật, giữ và kéo chuột để tra cả cụm từ.</li>
+                        <li><b>Bước 3:</b> Nhấn vào 1 từ hoặc kéo chọn cụm từ để tra cứu.</li>
                     </ul>
                     <p class="mt-2">
                         <i class="fas fa-magic-wand-sparkles mr-1 text-yellow-400"></i>
@@ -127,16 +126,25 @@
             <div id="resizer" class="hidden lg:block w-2 cursor-col-resize bg-gray-700 hover:bg-blue-600 transition-colors rounded-full mx-1"></div>
 
             <!-- Khu vực video và phụ đề -->
-            <main id="main-content" class="flex-1 flex flex-col p-0 lg:pl-2 h-full">
+            <main id="main-content" class="flex-1 flex flex-col p-0 lg:pl-1 h-full">
                 <!-- Vùng chứa video, tự động co giãn -->
                 <div id="video-wrapper" class="bg-black rounded-lg shadow-lg overflow-hidden w-full flex-1 min-h-0 flex items-center justify-center">
                     <video id="videoPlayer" class="max-w-full max-h-full" controls></video>
                 </div>
+                <!-- Nút điều khiển Tua video -->
+                <div id="video-controls" class="flex items-center justify-center gap-1 py-1 flex-shrink-0 max-h-4">
+                    <button id="rewindBtn" class="text-gray-400 hover:text-white text-xl p-1" title="Tua lại 10 giây">
+                        <i class="fas fa-backward"></i>
+                    </button>
+                    <button id="forwardBtn" class="text-gray-400 hover:text-white text-xl p-2" title="Tua tới 10 giây">
+                        <i class="fas fa-forward"></i>
+                    </button>
+                </div>
                 <!-- Vùng chứa phụ đề -->
-                <div id="subtitleContainer" class="mt-4 p-4 bg-gray-800 rounded-lg text-center w-full flex-shrink-0">
-                    <div id="prevSubtitle" class="text-gray-500 text-base sm:text-lg font-mono opacity-60 min-h-8"></div>
-                    <div id="currentSubtitle" class="text-gray-200 text-xl sm:text-2xl font-mono min-h-[40px]">Phụ đề sẽ hiển thị ở đây...</div>
-                    <div id="nextSubtitle" class="text-gray-500 text-base sm:text-lg font-mono opacity-60 min-h-8"></div>
+                <div id="subtitleContainer" class="p-4 bg-gray-800 rounded-lg text-center w-full flex-shrink-0 h-45 flex flex-col justify-center space-y-2">
+                    <div id="prevSubtitle" class="text-gray-500 text-base sm:text-lg font-mono opacity-60 h-12"></div>
+                    <div id="currentSubtitle" class="text-gray-200 text-xl sm:text-xl font-mono h-16">Phụ đề sẽ hiển thị ở đây...</div>
+                    <div id="nextSubtitle" class="text-gray-500 text-base sm:text-lg font-mono opacity-60 h-12"></div>
                 </div>
             </main>
         </div>
@@ -174,6 +182,8 @@
         const modalContent = document.getElementById('modalContent');
         const geminiApiKeyInput = document.getElementById('geminiApiKey');
         const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+        const rewindBtn = document.getElementById('rewindBtn');
+        const forwardBtn = document.getElementById('forwardBtn');
 
         let subtitles = [];
         let savedWords = new Set();
@@ -223,111 +233,49 @@
 
         function displaySubtitleContext() {
             if (currentSubtitleIndex === -1) {
-                prevSubtitleDiv.textContent = '';
-                currentSubtitleDiv.innerHTML = '<p class="text-gray-500">.....</p>';
-                nextSubtitleDiv.textContent = '';
+                makeInteractive(prevSubtitleDiv, '');
+                makeInteractive(currentSubtitleDiv, '<p class="text-gray-500">.....</p>');
+                makeInteractive(nextSubtitleDiv, '');
+                return;
+            }
+            
+            const prevText = (currentSubtitleIndex > 0) ? subtitles[currentSubtitleIndex - 1].text : '';
+            const currentText = subtitles[currentSubtitleIndex].text;
+            const nextText = (currentSubtitleIndex < subtitles.length - 1) ? subtitles[currentSubtitleIndex + 1].text : '';
+
+            makeInteractive(prevSubtitleDiv, prevText);
+            makeInteractive(currentSubtitleDiv, currentText);
+            makeInteractive(nextSubtitleDiv, nextText);
+        }
+
+        function makeInteractive(element, text) {
+            element.innerHTML = '';
+             if (!text || text.startsWith('<p')) {
+                element.innerHTML = text || '';
                 return;
             }
 
-            const currentSub = subtitles[currentSubtitleIndex];
             const lang = languageSelect.value;
-            
+            let parts;
+
             if (lang === 'zh-CN' || lang === 'ja-JP') {
-                setupCharacterSelection(currentSub.text);
+                parts = text.split('');
             } else {
-                setupWordSelection(currentSub.text);
+                parts = text.split(/(\s+)/);
             }
 
-            prevSubtitleDiv.textContent = (currentSubtitleIndex > 0) ? subtitles[currentSubtitleIndex - 1].text : '';
-            nextSubtitleDiv.textContent = (currentSubtitleIndex < subtitles.length - 1) ? subtitles[currentSubtitleIndex + 1].text : '';
-        }
-
-        function setupWordSelection(text) {
-            currentSubtitleDiv.innerHTML = '';
-            const words = text.split(/(\s+)/);
-            words.forEach(word => {
-                if (word.trim() !== '') {
+            parts.forEach(part => {
+                if (part.trim() !== '') {
                     const wordSpan = document.createElement('span');
-                    wordSpan.textContent = word;
+                    wordSpan.textContent = part;
                     wordSpan.className = 'subtitle-word';
-                    wordSpan.onclick = () => handleWordClick(word);
-                    currentSubtitleDiv.appendChild(wordSpan);
+                    element.appendChild(wordSpan);
                 } else {
-                    currentSubtitleDiv.appendChild(document.createTextNode(word));
+                    element.appendChild(document.createTextNode(part));
                 }
             });
         }
-
-        function setupCharacterSelection(text) {
-            currentSubtitleDiv.innerHTML = '';
-            const chars = text.split('');
-            chars.forEach(char => {
-                const charSpan = document.createElement('span');
-                charSpan.textContent = char;
-                if (char.trim() !== '') {
-                     charSpan.className = 'subtitle-word';
-                }
-                currentSubtitleDiv.appendChild(charSpan);
-            });
-
-            let isSelecting = false;
-            let startNode = null;
-            
-            const highlightRange = (endNode) => {
-                const allSpans = Array.from(currentSubtitleDiv.querySelectorAll('.subtitle-word'));
-                allSpans.forEach(span => span.classList.remove('bg-blue-600'));
-                
-                if (!startNode || !endNode) return;
-
-                const startIndex = allSpans.indexOf(startNode);
-                const endIndex = allSpans.indexOf(endNode);
-                const minIndex = Math.min(startIndex, endIndex);
-                const maxIndex = Math.max(startIndex, endIndex);
-                
-                for (let i = minIndex; i <= maxIndex; i++) {
-                    if(allSpans[i]) allSpans[i].classList.add('bg-blue-600');
-                }
-            };
-
-            const mouseMoveHandler = (e) => {
-                if (isSelecting && e.target.classList.contains('subtitle-word')) {
-                    highlightRange(e.target);
-                }
-            };
-            
-            const mouseUpHandler = () => {
-                if (isSelecting) {
-                    const selectedSpans = currentSubtitleDiv.querySelectorAll('.subtitle-word.bg-blue-600');
-                    if (selectedSpans.length > 0) {
-                         const selectedWord = Array.from(selectedSpans).map(span => span.textContent).join('');
-                         handleWordClick(selectedWord);
-                    }
-                    
-                    setTimeout(() => {
-                        selectedSpans.forEach(span => span.classList.remove('bg-blue-600'));
-                    }, 100);
-
-                    isSelecting = false;
-                    startNode = null;
-                    document.removeEventListener('mousemove', mouseMoveHandler);
-                    document.removeEventListener('mouseup', mouseUpHandler);
-                }
-            };
-
-            const mouseDownHandler = (e) => {
-                if (e.target.classList.contains('subtitle-word')) {
-                    isSelecting = true;
-                    startNode = e.target;
-                    highlightRange(startNode);
-                    document.addEventListener('mousemove', mouseMoveHandler);
-                    document.addEventListener('mouseup', mouseUpHandler);
-                    e.preventDefault();
-                }
-            };
-            
-            currentSubtitleDiv.addEventListener('mousedown', mouseDownHandler);
-        }
-
+        
         function handleWordClick(rawWord) {
             wasVideoPlaying = !videoPlayer.paused;
             videoPlayer.pause();
@@ -450,7 +398,7 @@
             geminiQueryBtn.disabled = true;
             geminiResultContainer.innerHTML = `<p class="italic">Đang hỏi Gemini...</p>`;
 
-            const prompt = `Phân tích chi tiết về từ "${word}" trong ${langName}. Cung cấp các thông tin sau theo định dạng Markdown:\n- **Trọng âm:** (Ghi rõ phiên âm hoặc âm tiết nhấn trọng âm)\n- **Nghĩa:** (Ghi ngắn gọn các nghĩa của từ)\n- **Ví dụ:** (Cung cấp 2-3 câu ví dụ có cả bản gốc và bản dịch tiếng Việt)\n- **Ngữ pháp:** (Loại từ, cách dùng cơ bản, các lưu ý nếu có)`;
+            const prompt = `Phân tích chi tiết về từ "${word}" trong ${langName}. Cung cấp các thông tin sau theo định dạng Markdown:\n- **Trọng âm:** (Ghi rõ âm tiết nhấn trọng âm)\n- **Nghĩa:** (Ghi ngắn gọn các nghĩa của từ)\n- **Ví dụ:** (Cung cấp 2-3 câu ví dụ có cả bản gốc và bản dịch tiếng Việt)\n- **Ngữ pháp:** (Loại từ, cách dùng cơ bản, các lưu ý nếu có)`;
             const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
             try {
@@ -591,6 +539,30 @@
                 closeModal();
             }
         });
+
+        rewindBtn.addEventListener('click', () => {
+            videoPlayer.currentTime = Math.max(0, videoPlayer.currentTime - 10);
+        });
+
+        forwardBtn.addEventListener('click', () => {
+            if (videoPlayer.duration) {
+                videoPlayer.currentTime = Math.min(videoPlayer.duration, videoPlayer.currentTime + 10);
+            }
+        });
+
+        subtitleContainer.addEventListener('mouseup', (event) => {
+            const selection = window.getSelection();
+            const selectedText = selection.toString().trim();
+            
+            if (selectedText) {
+                handleWordClick(selectedText);
+                selection.removeAllRanges(); // Bỏ chọn sau khi tra
+            } else if (event.target.classList.contains('subtitle-word')) {
+                // Handle single click if no text was selected
+                handleWordClick(event.target.textContent);
+            }
+        });
+
 
         // --- Resizer Logic ---
         function initResizer() {
