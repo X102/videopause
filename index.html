@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trình Xem Video và Tra Cứu Phụ Đề</title>
+    <title>Trình Phát Media và Tra Cứu Phụ Đề</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -35,35 +35,55 @@
             flex-shrink: 0; /* Ngăn thanh kéo co lại */
         }
         #main-content {
-            min-width: 0; /* Cho phép phần video co lại */
+            min-width: 0; /* Cho phép phần media co lại */
         }
-        #video-wrapper {
+        #media-wrapper {
             flex: 1; /* Đảm bảo wrapper lấp đầy không gian còn lại */
             min-height: 0; /* Cần thiết cho flexbox hoạt động đúng trong mọi trường hợp */
         }
-        /* CSS cho video để luôn vừa vặn */
-        #videoPlayer {
+        /* CSS cho media để luôn vừa vặn */
+        #mediaPlayer {
             /* Luôn giữ tỷ lệ khung hình và nằm gọn trong vùng chứa */
             object-fit: contain; 
+        }
+
+        /* --- Responsive Layout Logic --- */
+        /* On large screens (lg), create a fixed, non-scrolling layout */
+        @media (min-width: 1024px) {
+            html, body {
+                height: 100%;
+                overflow: hidden;
+            }
+            body {
+                display: flex;
+                flex-direction: column;
+            }
+            .container-wrapper {
+                flex-grow: 1;
+                min-height: 0;
+            }
+            #main-container {
+                height: 100%;
+            }
         }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200 font-sans leading-normal tracking-normal flex flex-col h-screen">
 
     <header class="text-center py-2 flex-shrink-0">
-        <h1 class="text-2xl font-bold text-white">Học Ngoại Ngữ Qua Video</h1>
+        <h1 class="text-2xl font-bold text-white">Học Ngoại Ngữ Qua Media</h1>
     </header>
 
-    <div class="container mx-auto px-4 lg:px-8 flex-grow min-h-0 pb-4">
+    <div class="container-wrapper container mx-auto px-4 lg:px-8 pb-4">
         <div id="main-container" class="flex flex-col lg:flex-row h-full">
             
-            <!-- Bảng điều khiển có thể cuộn -->
-            <aside id="control-panel" class="bg-gray-800 p-6 rounded-lg shadow-lg flex-shrink-0 lg:w-1/3" style="min-width: 300px; max-width: 50vw;">
+            <!-- Bảng điều khiển -->
+            <aside id="control-panel" class="bg-gray-800 p-6 rounded-lg shadow-lg flex-shrink-0 lg:w-1/3 mb-8 lg:mb-0" style="min-width: 300px; max-width: 50vw;">
                 <!-- Giới thiệu và Hướng dẫn -->
                 <div class="mb-6 p-3 bg-gray-900 border border-blue-500/50 rounded-lg text-gray-300 text-sm">
                     <h2 class="text-lg font-bold mb-2 text-blue-300"><i class="fas fa-info-circle mr-2"></i>Hướng dẫn</h2>
                     <ul class="list-disc list-inside space-y-1">
-                        <li><b>Bước 1:</b> Tải video và file phụ đề (.srt).</li>
+                        <li><b>Bước 1:</b> Tải media (video/audio) và file phụ đề (.srt).</li>
                         <li><b>Bước 2:</b> Chọn đúng ngôn ngữ của phụ đề.</li>
                         <li><b>Bước 3:</b> Nhấn vào 1 từ hoặc kéo chọn cụm từ để tra cứu.</li>
                     </ul>
@@ -74,10 +94,10 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="block mb-2 font-bold text-sm" for="videoUrl">1. Tải Video (Link hoặc File)</label>
-                    <input type="text" id="videoUrl" placeholder="Dán link video (MP4, WebM,...)" class="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    <label class="block mb-2 font-bold text-sm" for="mediaUrl">1. Tải Media (Video/Audio)</label>
+                    <input type="text" id="mediaUrl" placeholder="Dán link media (MP4, MP3,...)" class="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                     <span class="text-center block my-2 text-gray-500 text-xs">hoặc</span>
-                    <input type="file" id="videoFile" accept="video/*" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
+                    <input type="file" id="mediaFile" accept="video/*, audio/*" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
                 </div>
 
                 <div class="mb-4">
@@ -125,24 +145,24 @@
             <!-- Thanh kéo thay đổi kích thước -->
             <div id="resizer" class="hidden lg:block w-2 cursor-col-resize bg-gray-700 hover:bg-blue-600 transition-colors rounded-full mx-1"></div>
 
-            <!-- Khu vực video và phụ đề -->
-            <main id="main-content" class="flex-1 flex flex-col p-0 lg:pl-1 h-full">
-                <!-- Vùng chứa video, tự động co giãn -->
-                <div id="video-wrapper" class="bg-black rounded-lg shadow-lg overflow-hidden w-full flex-1 min-h-0 flex items-center justify-center">
-                    <video id="videoPlayer" class="max-w-full max-h-full" controls></video>
+            <!-- Khu vực media và phụ đề -->
+            <main id="main-content" class="lg:flex-1 flex flex-col p-0 lg:pl-2 h-full">
+                <!-- Vùng chứa media, tự động co giãn -->
+                <div id="media-wrapper" class="bg-black rounded-lg shadow-lg overflow-hidden w-full flex items-center justify-center">
+                    <video id="mediaPlayer" class="max-w-full max-h-full" controls></video>
                 </div>
-                <!-- Nút điều khiển Tua video -->
-                <div id="video-controls" class="flex items-center justify-center gap-1 py-1 flex-shrink-0 max-h-4">
-                    <button id="rewindBtn" class="text-gray-400 hover:text-white text-xl p-1" title="Tua lại 10 giây">
+                <!-- Nút điều khiển Tua media -->
+                <div id="media-controls" class="flex items-center justify-center gap-4 py-2 flex-shrink-0">
+                    <button id="rewindBtn" class="text-gray-400 hover:text-white text-2xl p-2" title="Tua lại 10 giây">
                         <i class="fas fa-backward"></i>
                     </button>
-                    <button id="forwardBtn" class="text-gray-400 hover:text-white text-xl p-2" title="Tua tới 10 giây">
+                    <button id="forwardBtn" class="text-gray-400 hover:text-white text-2xl p-2" title="Tua tới 10 giây">
                         <i class="fas fa-forward"></i>
                     </button>
                 </div>
                 <!-- Vùng chứa phụ đề -->
-                <div id="subtitleContainer" class="p-4 bg-gray-800 rounded-lg text-center w-full flex-shrink-0 h-45 flex flex-col justify-center space-y-2">
-                    <div id="prevSubtitle" class="text-gray-500 text-base sm:text-lg font-mono opacity-60 h-12"></div>
+                <div id="subtitleContainer" class="p-4 bg-gray-800 rounded-lg text-center w-full flex-shrink-0 h-45">
+                    <div id="prevSubtitle" class="text-gray-500 text-base sm:text-lg font-mono opacity-60 min-h-12"></div>
                     <div id="currentSubtitle" class="text-gray-200 text-xl sm:text-xl font-mono h-16">Phụ đề sẽ hiển thị ở đây...</div>
                     <div id="nextSubtitle" class="text-gray-500 text-base sm:text-lg font-mono opacity-60 h-12"></div>
                 </div>
@@ -165,9 +185,9 @@
     </div>
 
     <script>
-        const videoPlayer = document.getElementById('videoPlayer');
-        const videoUrlInput = document.getElementById('videoUrl');
-        const videoFileInput = document.getElementById('videoFile');
+        const mediaPlayer = document.getElementById('mediaPlayer');
+        const mediaUrlInput = document.getElementById('mediaUrl');
+        const mediaFileInput = document.getElementById('mediaFile');
         const srtFileInput = document.getElementById('srtFile');
         const subtitleContainer = document.getElementById('subtitleContainer');
         const prevSubtitleDiv = document.getElementById('prevSubtitle');
@@ -188,7 +208,7 @@
         let subtitles = [];
         let savedWords = new Set();
         let currentSubtitleIndex = -1;
-        let wasVideoPlaying = false;
+        let wasMediaPlaying = false;
 
         function parseSRT(srtText) {
             const normalizedText = srtText.replace(/\r\n/g, '\n');
@@ -215,7 +235,7 @@
         }
         
         function updateSubtitle() {
-            const currentTime = videoPlayer.currentTime;
+            const currentTime = mediaPlayer.currentTime;
             let foundSubIndex = -1;
 
             for (let i = 0; i < subtitles.length; i++) {
@@ -277,8 +297,8 @@
         }
         
         function handleWordClick(rawWord) {
-            wasVideoPlaying = !videoPlayer.paused;
-            videoPlayer.pause();
+            wasMediaPlaying = !mediaPlayer.paused;
+            mediaPlayer.pause();
             
             const word = rawWord.trim().replace(/[.,!?;:"“”]/g, '').toLowerCase();
             if (!word) return;
@@ -488,8 +508,8 @@
         function closeModal() {
             modal.classList.add('hidden');
             modalContent.innerHTML = ''; 
-            if (wasVideoPlaying) {
-                videoPlayer.play();
+            if (wasMediaPlaying) {
+                mediaPlayer.play();
             }
         }
 
@@ -501,17 +521,17 @@
 
         saveApiKeyBtn.addEventListener('click', saveApiKey);
         
-        videoUrlInput.addEventListener('change', () => {
-            const url = videoUrlInput.value.trim();
-            if (url) { videoPlayer.src = url; videoFileInput.value = ''; }
+        mediaUrlInput.addEventListener('change', () => {
+            const url = mediaUrlInput.value.trim();
+            if (url) { mediaPlayer.src = url; mediaFileInput.value = ''; }
         });
 
-        videoFileInput.addEventListener('change', (event) => {
+        mediaFileInput.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (file) {
                 const fileURL = URL.createObjectURL(file);
-                videoPlayer.src = fileURL;
-                videoUrlInput.value = '';
+                mediaPlayer.src = fileURL;
+                mediaUrlInput.value = '';
             }
         });
 
@@ -532,7 +552,7 @@
             }
         });
 
-        videoPlayer.addEventListener('timeupdate', updateSubtitle);
+        mediaPlayer.addEventListener('timeupdate', updateSubtitle);
         closeModalBtn.addEventListener('click', closeModal);
         modal.addEventListener('click', (event) => {
             if (event.target === modal) {
@@ -541,12 +561,12 @@
         });
 
         rewindBtn.addEventListener('click', () => {
-            videoPlayer.currentTime = Math.max(0, videoPlayer.currentTime - 10);
+            mediaPlayer.currentTime = Math.max(0, mediaPlayer.currentTime - 10);
         });
 
         forwardBtn.addEventListener('click', () => {
-            if (videoPlayer.duration) {
-                videoPlayer.currentTime = Math.min(videoPlayer.duration, videoPlayer.currentTime + 10);
+            if (mediaPlayer.duration) {
+                mediaPlayer.currentTime = Math.min(mediaPlayer.duration, mediaPlayer.currentTime + 10);
             }
         });
 
@@ -585,7 +605,6 @@
                 document.addEventListener('mousemove', mouseMoveHandler);
                 document.addEventListener('mouseup', mouseUpHandler);
                 
-                // Prevent text selection while dragging
                 document.body.style.userSelect = 'none';
                 document.body.style.pointerEvents = 'none';
             };
