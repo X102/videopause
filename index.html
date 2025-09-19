@@ -23,59 +23,72 @@
             background-color: #4a5568;
             color: #f7fafc;
         }
-        video { display: block; margin: 0 auto; }
-        /* Style cho phụ đề theo ngữ cảnh */
-        #subtitleContainer {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+        /* Style cho layout chính */
+        html, body {
+            height: 100%;
+            overflow: hidden; /* Ngăn cuộn trang chính */
+        }
+        #control-panel {
+            overflow-y: auto; /* Cho phép cuộn bảng điều khiển */
+        }
+        #resizer {
+            flex-shrink: 0; /* Ngăn thanh kéo co lại */
+        }
+        #main-content {
+            min-width: 0; /* Cho phép phần video co lại */
+        }
+        #video-wrapper {
+            flex: 1; /* Đảm bảo wrapper lấp đầy không gian còn lại */
+            min-height: 0; /* Cần thiết cho flexbox hoạt động đúng trong mọi trường hợp */
+        }
+        /* CSS cho video để luôn vừa vặn */
+        #videoPlayer {
+            /* Luôn giữ tỷ lệ khung hình và nằm gọn trong vùng chứa */
+            object-fit: contain; 
         }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-200 font-sans leading-normal tracking-normal">
+<body class="bg-gray-900 text-gray-200 font-sans leading-normal tracking-normal flex flex-col h-screen">
 
-    <div class="container mx-auto p-4 lg:p-8">
-        <header class="text-center mb-8">
-            <h1 class="text-3xl lg:text-4xl font-bold text-white">Học Ngoại Ngữ Qua Video</h1>
-            <p class="text-gray-400 mt-2">Tải video và phụ đề SRT lên, sau đó nhấn vào một từ để tra cứu.</p>
-        </header>
+    <header class="text-center py-2 flex-shrink-0">
+        <h1 class="text-2xl font-bold text-white">Học Ngoại Ngữ Qua Video</h1>
+    </header>
 
-        <!-- Giới thiệu và Hướng dẫn -->
-        <div class="mb-8 p-4 bg-gray-800 border border-blue-500/50 rounded-lg text-gray-300">
-            <h2 class="text-xl font-bold mb-3 text-blue-300"><i class="fas fa-info-circle mr-2"></i>Giới thiệu & Hướng dẫn nhanh</h2>
-            <p class="mb-2">Đây là công cụ giúp bạn học ngoại ngữ bằng cách xem video với phụ đề tương tác. Bạn có thể nhấn vào từng từ để tra cứu nghĩa, phát âm, và xem ví dụ trực tiếp.</p>
-            <ul class="list-disc list-inside space-y-1 mb-3">
-                <li><b>Bước 1:</b> Tải lên video và file phụ đề (.srt) của bạn.</li>
-                <li><b>Bước 2:</b> Chọn đúng ngôn ngữ của phụ đề.</li>
-                <li><b>Bước 3:</b> Nhấn vào bất kỳ từ nào trong phụ đề để bắt đầu tra cứu.</li>
-            </ul>
-            <p class="mt-2">
-                <i class="fas fa-magic-wand-sparkles mr-2 text-yellow-400"></i>
-                <b>Chưa có file phụ đề?</b> Bạn có thể tự động tạo phụ đề từ video bằng công cụ AI tại đây: 
-                <a href="https://colab.research.google.com/drive/1itmzYafvZ5zzhcPT8cnbbFvpLOiH5wzI?usp=sharing" target="_blank" class="font-bold text-blue-400 hover:underline">Tạo Sub tự động (Google Colab)</a>.
-            </p>
-        </div>
+    <div class="container mx-auto px-4 lg:px-8 flex-grow min-h-0 pb-4">
+        <div id="main-container" class="flex flex-col lg:flex-row h-full">
+            
+            <!-- Bảng điều khiển có thể cuộn -->
+            <aside id="control-panel" class="bg-gray-800 p-6 rounded-lg shadow-lg flex-shrink-0 lg:w-1/3" style="min-width: 300px; max-width: 50vw;">
+                <!-- Giới thiệu và Hướng dẫn -->
+                <div class="mb-6 p-3 bg-gray-900 border border-blue-500/50 rounded-lg text-gray-300 text-sm">
+                    <h2 class="text-lg font-bold mb-2 text-blue-300"><i class="fas fa-info-circle mr-2"></i>Hướng dẫn</h2>
+                    <ul class="list-disc list-inside space-y-1">
+                        <li><b>Bước 1:</b> Tải video và file phụ đề (.srt).</li>
+                        <li><b>Bước 2:</b> Chọn đúng ngôn ngữ của phụ đề.</li>
+                        <li><b>Bước 3:</b> Nhấn vào từ để tra cứu.</li>
+                        <li><b>Mẹo:</b> Với tiếng Trung/Nhật, giữ và kéo chuột để tra cả cụm từ.</li>
+                    </ul>
+                    <p class="mt-2">
+                        <i class="fas fa-magic-wand-sparkles mr-1 text-yellow-400"></i>
+                        <a href="https://colab.research.google.com/drive/1itmzYafvZ5zzhcPT8cnbbFvpLOiH5wzI?usp=sharing" target="_blank" class="font-bold text-blue-400 hover:underline">Tạo Sub tự động tại đây</a>.
+                    </p>
+                </div>
 
-        <div class="flex flex-col lg:flex-row gap-8">
-            <!-- Cột điều khiển và lịch sử -->
-            <aside class="lg:w-1/3 bg-gray-800 p-6 rounded-lg shadow-lg">
-                <h2 class="text-2xl font-semibold mb-4 border-b-2 border-gray-700 pb-2">Bảng Điều Khiển</h2>
-                
                 <div class="mb-4">
-                    <label class="block mb-2 font-bold" for="videoUrl">1. Tải Video (Link hoặc File)</label>
-                    <input type="text" id="videoUrl" placeholder="Dán link video (MP4, WebM,...)" class="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <span class="text-center block my-2 text-gray-500">hoặc</span>
+                    <label class="block mb-2 font-bold text-sm" for="videoUrl">1. Tải Video (Link hoặc File)</label>
+                    <input type="text" id="videoUrl" placeholder="Dán link video (MP4, WebM,...)" class="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    <span class="text-center block my-2 text-gray-500 text-xs">hoặc</span>
                     <input type="file" id="videoFile" accept="video/*" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
                 </div>
 
                 <div class="mb-4">
-                    <label class="block mb-2 font-bold" for="srtFile">2. Tải File Phụ Đề (.srt)</label>
+                    <label class="block mb-2 font-bold text-sm" for="srtFile">2. Tải File Phụ Đề (.srt)</label>
                     <input type="file" id="srtFile" accept=".srt" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700">
                 </div>
 
                 <div class="mb-6">
-                    <label for="languageSelect" class="block mb-2 font-bold">3. Chọn Ngôn Ngữ Phụ Đề</label>
-                    <select id="languageSelect" class="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label for="languageSelect" class="block mb-2 font-bold text-sm">3. Chọn Ngôn Ngữ Phụ Đề</label>
+                    <select id="languageSelect" class="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                         <option value="en-US">Tiếng Anh (English)</option>
                         <option value="fr-FR">Tiếng Pháp (Français)</option>
                         <option value="de-DE">Tiếng Đức (Deutsch)</option>
@@ -94,10 +107,10 @@
                 </div>
 
                 <div class="mb-6">
-                    <label for="geminiApiKey" class="block mb-2 font-bold">4. Gemini API Key (Tùy chọn)</label>
+                    <label for="geminiApiKey" class="block mb-2 font-bold text-sm">4. Gemini API Key (Tùy chọn)</label>
                      <p class="text-xs text-gray-500 mb-2">Lấy API Key của bạn tại <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-400 hover:underline">Google AI Studio</a>.</p>
                     <div class="flex gap-2">
-                        <input type="password" id="geminiApiKey" placeholder="Nhập API Key của bạn" class="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="password" id="geminiApiKey" placeholder="Nhập API Key của bạn" class="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                         <button id="saveApiKeyBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Lưu</button>
                     </div>
                 </div>
@@ -109,12 +122,18 @@
                     </div>
                 </div>
             </aside>
+            
+            <!-- Thanh kéo thay đổi kích thước -->
+            <div id="resizer" class="hidden lg:block w-2 cursor-col-resize bg-gray-700 hover:bg-blue-600 transition-colors rounded-full mx-1"></div>
 
-            <main class="lg:w-2/3">
-                <div class="bg-black rounded-lg shadow-lg overflow-hidden">
-                    <video id="videoPlayer" class="w-full h-auto" controls></video>
+            <!-- Khu vực video và phụ đề -->
+            <main id="main-content" class="flex-1 flex flex-col p-0 lg:pl-2 h-full">
+                <!-- Vùng chứa video, tự động co giãn -->
+                <div id="video-wrapper" class="bg-black rounded-lg shadow-lg overflow-hidden w-full flex-1 min-h-0 flex items-center justify-center">
+                    <video id="videoPlayer" class="max-w-full max-h-full" controls></video>
                 </div>
-                <div id="subtitleContainer" class="mt-4 p-4 bg-gray-800 rounded-lg text-center min-h-[150px] flex flex-col items-center justify-center">
+                <!-- Vùng chứa phụ đề -->
+                <div id="subtitleContainer" class="mt-4 p-4 bg-gray-800 rounded-lg text-center w-full flex-shrink-0">
                     <div id="prevSubtitle" class="text-gray-500 text-base sm:text-lg font-mono opacity-60 min-h-8"></div>
                     <div id="currentSubtitle" class="text-gray-200 text-xl sm:text-2xl font-mono min-h-[40px]">Phụ đề sẽ hiển thị ở đây...</div>
                     <div id="nextSubtitle" class="text-gray-500 text-base sm:text-lg font-mono opacity-60 min-h-8"></div>
@@ -205,14 +224,27 @@
         function displaySubtitleContext() {
             if (currentSubtitleIndex === -1) {
                 prevSubtitleDiv.textContent = '';
-                currentSubtitleDiv.innerHTML = '<p class="text-gray-500">.......</p>';
+                currentSubtitleDiv.innerHTML = '<p class="text-gray-500">.....</p>';
                 nextSubtitleDiv.textContent = '';
                 return;
             }
 
             const currentSub = subtitles[currentSubtitleIndex];
+            const lang = languageSelect.value;
+            
+            if (lang === 'zh-CN' || lang === 'ja-JP') {
+                setupCharacterSelection(currentSub.text);
+            } else {
+                setupWordSelection(currentSub.text);
+            }
+
+            prevSubtitleDiv.textContent = (currentSubtitleIndex > 0) ? subtitles[currentSubtitleIndex - 1].text : '';
+            nextSubtitleDiv.textContent = (currentSubtitleIndex < subtitles.length - 1) ? subtitles[currentSubtitleIndex + 1].text : '';
+        }
+
+        function setupWordSelection(text) {
             currentSubtitleDiv.innerHTML = '';
-            const words = currentSub.text.split(/(\s+)/);
+            const words = text.split(/(\s+)/);
             words.forEach(word => {
                 if (word.trim() !== '') {
                     const wordSpan = document.createElement('span');
@@ -224,9 +256,76 @@
                     currentSubtitleDiv.appendChild(document.createTextNode(word));
                 }
             });
+        }
 
-            prevSubtitleDiv.textContent = (currentSubtitleIndex > 0) ? subtitles[currentSubtitleIndex - 1].text : '';
-            nextSubtitleDiv.textContent = (currentSubtitleIndex < subtitles.length - 1) ? subtitles[currentSubtitleIndex + 1].text : '';
+        function setupCharacterSelection(text) {
+            currentSubtitleDiv.innerHTML = '';
+            const chars = text.split('');
+            chars.forEach(char => {
+                const charSpan = document.createElement('span');
+                charSpan.textContent = char;
+                if (char.trim() !== '') {
+                     charSpan.className = 'subtitle-word';
+                }
+                currentSubtitleDiv.appendChild(charSpan);
+            });
+
+            let isSelecting = false;
+            let startNode = null;
+            
+            const highlightRange = (endNode) => {
+                const allSpans = Array.from(currentSubtitleDiv.querySelectorAll('.subtitle-word'));
+                allSpans.forEach(span => span.classList.remove('bg-blue-600'));
+                
+                if (!startNode || !endNode) return;
+
+                const startIndex = allSpans.indexOf(startNode);
+                const endIndex = allSpans.indexOf(endNode);
+                const minIndex = Math.min(startIndex, endIndex);
+                const maxIndex = Math.max(startIndex, endIndex);
+                
+                for (let i = minIndex; i <= maxIndex; i++) {
+                    if(allSpans[i]) allSpans[i].classList.add('bg-blue-600');
+                }
+            };
+
+            const mouseMoveHandler = (e) => {
+                if (isSelecting && e.target.classList.contains('subtitle-word')) {
+                    highlightRange(e.target);
+                }
+            };
+            
+            const mouseUpHandler = () => {
+                if (isSelecting) {
+                    const selectedSpans = currentSubtitleDiv.querySelectorAll('.subtitle-word.bg-blue-600');
+                    if (selectedSpans.length > 0) {
+                         const selectedWord = Array.from(selectedSpans).map(span => span.textContent).join('');
+                         handleWordClick(selectedWord);
+                    }
+                    
+                    setTimeout(() => {
+                        selectedSpans.forEach(span => span.classList.remove('bg-blue-600'));
+                    }, 100);
+
+                    isSelecting = false;
+                    startNode = null;
+                    document.removeEventListener('mousemove', mouseMoveHandler);
+                    document.removeEventListener('mouseup', mouseUpHandler);
+                }
+            };
+
+            const mouseDownHandler = (e) => {
+                if (e.target.classList.contains('subtitle-word')) {
+                    isSelecting = true;
+                    startNode = e.target;
+                    highlightRange(startNode);
+                    document.addEventListener('mousemove', mouseMoveHandler);
+                    document.addEventListener('mouseup', mouseUpHandler);
+                    e.preventDefault();
+                }
+            };
+            
+            currentSubtitleDiv.addEventListener('mousedown', mouseDownHandler);
         }
 
         function handleWordClick(rawWord) {
@@ -269,11 +368,19 @@
                 youglishLinkHTML = `<a href="${youglishLink}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fab fa-youtube mr-2 text-red-500"></i> Mở YouGlish (Phát âm trong ngữ cảnh)</a>`;
             }
 
+            const googleTranslateLangMap = {
+                'en-US': 'en', 'ru-RU': 'ru', 'zh-CN': 'zh-CN', 'fr-FR': 'fr',
+                'de-DE': 'de', 'ja-JP': 'ja', 'ko-KR': 'ko', 'it-IT': 'it',
+                'pt-PT': 'pt', 'es-ES': 'es', 'cs-CZ': 'cs', 'no-NO': 'no',
+                'km-KH': 'km', 'lo-LA': 'lo'
+            };
+            const googleLangCode = googleTranslateLangMap[lang] || lang.split('-')[0];
+
             modalContent.innerHTML = `
                 <div>
                     <h3 class="font-bold text-lg mb-2 text-blue-300">Tra cứu nhanh</h3>
                     <div class="space-y-2">
-                        <a href="https://translate.google.com/?sl=${lang.split('-')[0]}&tl=vi&text=${encodedWord}&op=translate" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-language mr-2 text-blue-400"></i> Mở Google Dịch (Việt)</a>
+                        <a href="https://translate.google.com/?sl=${googleLangCode}&tl=vi&text=${encodedWord}&op=translate" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-language mr-2 text-blue-400"></i> Mở Google Dịch (Việt)</a>
                         ${youglishLinkHTML}
                     </div>
                 </div>
@@ -343,7 +450,7 @@
             geminiQueryBtn.disabled = true;
             geminiResultContainer.innerHTML = `<p class="italic">Đang hỏi Gemini...</p>`;
 
-            const prompt = `Phân tích chi tiết về từ "${word}" trong ${langName}. Cung cấp các thông tin sau theo định dạng Markdown:\n- **Trọng âm:** (Ghi rõ âm tiết nhấn trọng âm)\n- **Nghĩa:** (Ghi ngắn gọn các nghĩa của từ)\n- **Ví dụ:** (Cung cấp 2-3 câu ví dụ có cả bản gốc và bản dịch tiếng Việt)\n- **Ngữ pháp:** (Loại từ, cách dùng cơ bản, các lưu ý nếu có)`;
+            const prompt = `Phân tích chi tiết về từ "${word}" trong ${langName}. Cung cấp các thông tin sau theo định dạng Markdown:\n- **Trọng âm:** (Ghi rõ phiên âm hoặc âm tiết nhấn trọng âm)\n- **Nghĩa:** (Ghi ngắn gọn các nghĩa của từ)\n- **Ví dụ:** (Cung cấp 2-3 câu ví dụ có cả bản gốc và bản dịch tiếng Việt)\n- **Ngữ pháp:** (Loại từ, cách dùng cơ bản, các lưu ý nếu có)`;
             const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
             try {
@@ -439,7 +546,11 @@
         }
 
         // --- Event Listeners ---
-        document.addEventListener('DOMContentLoaded', loadApiKey);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadApiKey();
+            initResizer();
+        });
+
         saveApiKeyBtn.addEventListener('click', saveApiKey);
         
         videoUrlInput.addEventListener('change', () => {
@@ -480,6 +591,57 @@
                 closeModal();
             }
         });
+
+        // --- Resizer Logic ---
+        function initResizer() {
+            const resizer = document.getElementById('resizer');
+            const controlPanel = document.getElementById('control-panel');
+            const mainContainer = document.getElementById('main-container');
+
+            const savedWidth = localStorage.getItem('sidebarWidth');
+            if (savedWidth) {
+                controlPanel.style.width = savedWidth;
+            }
+
+            let x = 0;
+            let sidebarWidth = 0;
+
+            const mouseDownHandler = (e) => {
+                x = e.clientX;
+                sidebarWidth = controlPanel.getBoundingClientRect().width;
+
+                document.addEventListener('mousemove', mouseMoveHandler);
+                document.addEventListener('mouseup', mouseUpHandler);
+                
+                // Prevent text selection while dragging
+                document.body.style.userSelect = 'none';
+                document.body.style.pointerEvents = 'none';
+            };
+
+            const mouseMoveHandler = (e) => {
+                const dx = e.clientX - x;
+                const newSidebarWidth = sidebarWidth + dx;
+                
+                const minWidth = 300;
+                const maxWidth = mainContainer.clientWidth - 400;
+
+                if (newSidebarWidth > minWidth && newSidebarWidth < maxWidth) {
+                    controlPanel.style.width = `${newSidebarWidth}px`;
+                }
+            };
+
+            const mouseUpHandler = () => {
+                localStorage.setItem('sidebarWidth', controlPanel.style.width);
+
+                document.removeEventListener('mousemove', mouseMoveHandler);
+                document.removeEventListener('mouseup', mouseUpHandler);
+                
+                document.body.style.userSelect = '';
+                document.body.style.pointerEvents = '';
+            };
+
+            resizer.addEventListener('mousedown', mouseDownHandler);
+        }
     </script>
 </body>
 </html>
