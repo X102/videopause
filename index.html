@@ -77,17 +77,25 @@
                     <label for="languageSelect" class="block mb-2 font-bold">3. Chọn Ngôn Ngữ Phụ Đề</label>
                     <select id="languageSelect" class="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="en-US">Tiếng Anh (English)</option>
-                        <option value="ru-RU">Tiếng Nga (Русский)</option>
-                        <option value="zh-CN">Tiếng Trung (中文)</option>
                         <option value="fr-FR">Tiếng Pháp (Français)</option>
                         <option value="de-DE">Tiếng Đức (Deutsch)</option>
+                        <option value="es-ES">Tiếng Tây Ban Nha (Español)</option>
+                        <option value="pt-PT">Tiếng Bồ Đào Nha (Português)</option>
+                        <option value="it-IT">Tiếng Italia (Italiano)</option>
+                        <option value="ru-RU">Tiếng Nga (Русский)</option>
+                        <option value="cs-CZ">Tiếng Séc (Čeština)</option>
+                        <option value="no-NO">Tiếng Na Uy (Norsk)</option>
+                        <option value="zh-CN">Tiếng Trung (中文)</option>
                         <option value="ja-JP">Tiếng Nhật (日本語)</option>
+                        <option value="ko-KR">Tiếng Hàn (한국어)</option>
+                        <option value="lo-LA">Tiếng Lào (ລາວ)</option>
+                        <option value="km-KH">Tiếng Khmer (ខ្មែរ)</option>
                     </select>
                 </div>
 
                 <div class="mb-6">
                     <label for="geminiApiKey" class="block mb-2 font-bold">4. Gemini API Key (Tùy chọn)</label>
-                    <p class="text-xs text-gray-500 mt-2">API Key của bạn sẽ được lưu trữ cục bộ trên trình duyệt của bạn. Lấy API Key của bạn tại <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-600 hover:underline">Google AI Studio</a>.</p>
+                     <p class="text-xs text-gray-500 mb-2">Lấy API Key của bạn tại <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-400 hover:underline">Google AI Studio</a>.</p>
                     <div class="flex gap-2">
                         <input type="password" id="geminiApiKey" placeholder="Nhập API Key của bạn" class="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <button id="saveApiKeyBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Lưu</button>
@@ -107,9 +115,9 @@
                     <video id="videoPlayer" class="w-full h-auto" controls></video>
                 </div>
                 <div id="subtitleContainer" class="mt-4 p-4 bg-gray-800 rounded-lg text-center min-h-[150px] flex flex-col items-center justify-center">
-                    <div id="prevSubtitle" class="text-gray-500 text-lg font-mono opacity-60 h-8"></div>
-                    <div id="currentSubtitle" class="text-gray-200 text-2xl font-mono min-h-[40px]">Phụ đề sẽ hiển thị ở đây...</div>
-                    <div id="nextSubtitle" class="text-gray-500 text-lg font-mono opacity-60 h-8"></div>
+                    <div id="prevSubtitle" class="text-gray-500 text-base sm:text-lg font-mono opacity-60 min-h-8"></div>
+                    <div id="currentSubtitle" class="text-gray-200 text-xl sm:text-2xl font-mono min-h-[40px]">Phụ đề sẽ hiển thị ở đây...</div>
+                    <div id="nextSubtitle" class="text-gray-500 text-base sm:text-lg font-mono opacity-60 min-h-8"></div>
                 </div>
             </main>
         </div>
@@ -197,7 +205,7 @@
         function displaySubtitleContext() {
             if (currentSubtitleIndex === -1) {
                 prevSubtitleDiv.textContent = '';
-                currentSubtitleDiv.innerHTML = '<p class="text-gray-500">Phụ đề sẽ hiển thị ở đây...</p>';
+                currentSubtitleDiv.innerHTML = '<p class="text-gray-500">.......</p>';
                 nextSubtitleDiv.textContent = '';
                 return;
             }
@@ -249,22 +257,24 @@
             };
             
             const youglishLangMap = {
-                'en-US': 'english',
-                'ru-RU': 'russian',
-                'zh-CN': 'chinese',
-                'fr-FR': 'french',
-                'de-DE': 'german',
-                'ja-JP': 'japanese'
+                'en-US': 'english', 'ru-RU': 'russian', 'zh-CN': 'chinese',
+                'fr-FR': 'french', 'de-DE': 'german', 'ja-JP': 'japanese',
+                'ko-KR': 'korean', 'it-IT': 'italian', 'pt-PT': 'portuguese',
+                'es-ES': 'spanish'
             };
-            const youglishLang = youglishLangMap[lang] || 'english';
-            const youglishLink = `https://youglish.com/pronounce/${encodedWord}/${youglishLang}`;
+            const youglishLang = youglishLangMap[lang];
+            let youglishLinkHTML = '';
+            if (youglishLang) {
+                const youglishLink = `https://youglish.com/pronounce/${encodedWord}/${youglishLang}`;
+                youglishLinkHTML = `<a href="${youglishLink}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fab fa-youtube mr-2 text-red-500"></i> Mở YouGlish (Phát âm trong ngữ cảnh)</a>`;
+            }
 
             modalContent.innerHTML = `
                 <div>
                     <h3 class="font-bold text-lg mb-2 text-blue-300">Tra cứu nhanh</h3>
                     <div class="space-y-2">
                         <a href="https://translate.google.com/?sl=${lang.split('-')[0]}&tl=vi&text=${encodedWord}&op=translate" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-language mr-2 text-blue-400"></i> Mở Google Dịch (Việt)</a>
-                        <a href="${youglishLink}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fab fa-youtube mr-2 text-red-500"></i> Mở YouGlish (Phát âm trong ngữ cảnh)</a>
+                        ${youglishLinkHTML}
                     </div>
                 </div>
                 <div>
@@ -286,22 +296,35 @@
             document.getElementById('copyGeminiBtn').addEventListener('click', copyGeminiResult);
 
             const externalLinksContainer = document.getElementById('externalLinks');
-            let links = '';
-            switch (lang) {
-                case 'ru-RU':
-                    links = `<a href="https://vtudien.com/nga-viet/dictionary/nghia-cua-tu-${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-book mr-2"></i> Tra VTuDien (Nga-Việt)</a>
-                             <a href="https://ru.wiktionary.org/wiki/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Wiktionary (Nga)</a>`;
-                    break;
-                case 'zh-CN':
-                    links = `<a href="https://vtudien.com/trung-viet/dictionary/nghia-cua-tu-${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-book mr-2"></i> Tra VTuDien (Trung-Việt)</a>
-                             <a href="https://hanzii.net/search/word/${encodedWord}?hl=vi" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-pen-fancy mr-2"></i> Tra Hanzii Dict</a>`;
-                    break;
-                case 'en-US':
-                default:
-                    links = `<a href="https://vtudien.com/anh-viet/dictionary/nghia-cua-tu-${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-book mr-2"></i> Tra VTuDien (Anh-Việt)</a>
-                             <a href="https://dictionary.cambridge.org/dictionary/english-vietnamese/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-graduation-cap mr-2"></i> Tra Cambridge Dictionary</a>`;
-                    break;
-            }
+            
+            const vtudienLangMap = {
+                'en-US': 'anh-viet', 'ru-RU': 'nga-viet', 'zh-CN': 'trung-viet',
+                'fr-FR': 'phap-viet', 'de-DE': 'duc-viet', 'ja-JP': 'nhat-viet',
+                'ko-KR': 'han-viet', 'it-IT': 'italia-viet', 'cs-CZ': 'sec-viet',
+                'es-ES': 'taybannha-viet', 'pt-PT': 'bodaonha-viet', 'no-NO': 'nauy-viet',
+                'km-KH': 'khmer-viet', 'lo-LA': 'lao-viet'
+            };
+            const vtudienSlug = vtudienLangMap[lang] || 'anh-viet';
+            let links = `<a href="https://vtudien.com/${vtudienSlug}/dictionary/nghia-cua-tu-${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-book mr-2"></i> Tra VTuDien</a>`;
+
+            const secondDictMap = {
+                'en-US': `<a href="https://dictionary.cambridge.org/dictionary/english-vietnamese/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-graduation-cap mr-2"></i> Tra Cambridge Dictionary</a>`,
+                'ru-RU': `<a href="https://ru.wiktionary.org/wiki/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Wiktionary (Nga)</a>`,
+                'zh-CN': `<a href="https://hanzii.net/search/word/${encodedWord}?hl=vi" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-pen-fancy mr-2"></i> Tra Hanzii Dict</a>`,
+                'fr-FR': `<a href="https://www.larousse.fr/dictionnaires/francais/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Larousse (Pháp)</a>`,
+                'de-DE': `<a href="https://www.duden.de/suchen/dudenonline/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Duden (Đức)</a>`,
+                'ja-JP': `<a href="https://jisho.org/search/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-torii-gate mr-2"></i> Tra Jisho (Nhật)</a>`,
+                'ko-KR': `<a href="https://ko.dict.naver.com/#/search?query=${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-book-open mr-2"></i> Tra Naver Dict (Hàn)</a>`,
+                'it-IT': `<a href="https://www.collinsdictionary.com/dictionary/italian-english/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Collins (Ý)</a>`,
+                'cs-CZ': `<a href="https://slovnik.seznam.cz/preklad/cesky_anglicky/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Seznam (Séc)</a>`,
+                'es-ES': `<a href="https://www.spanishdict.com/translate/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-book-open mr-2"></i> Tra SpanishDict</a>`,
+                'pt-PT': `<a href="https://www.linguee.com/portuguese-english/search?source=auto&query=${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Linguee (Bồ Đào Nha)</a>`,
+                'no-NO': `<a href="https://ordbokene.no/bm/search?q=${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Ordbøkene (Na Uy)</a>`,
+                'km-KH': `<a href="https://en.wiktionary.org/wiki/${encodedWord}#Khmer" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Wiktionary (Khmer)</a>`,
+                'lo-LA': `<a href="https://en.wiktionary.org/wiki/${encodedWord}#Lao" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Wiktionary (Lao)</a>`
+            };
+            links += secondDictMap[lang] || '';
+
             links += `<a href="https://www.google.com/search?q=${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fab fa-google mr-2"></i> Tra Google Search</a>`;
             externalLinksContainer.innerHTML = links;
             modal.classList.remove('hidden');
@@ -320,7 +343,7 @@
             geminiQueryBtn.disabled = true;
             geminiResultContainer.innerHTML = `<p class="italic">Đang hỏi Gemini...</p>`;
 
-            const prompt = `Phân tích chi tiết về từ "${word}" trong ${langName}. Cung cấp các thông tin sau theo định dạng Markdown:\n- **Trọng âm:** (Ghi rõ âm tiết nhấn trọng âm)\n- **Nghĩa** (Ghi ngắn gọn các nghĩa cửa từ)\n **Ví dụ:** (Cung cấp 2-3 câu ví dụ có cả bản gốc và bản dịch tiếng Việt)\n- **Ngữ pháp:** (Loại từ, cách dùng cơ bản, các lưu ý nếu có)`;
+            const prompt = `Phân tích chi tiết về từ "${word}" trong ${langName}. Cung cấp các thông tin sau theo định dạng Markdown:\n- **Trọng âm:** (Ghi rõ âm tiết nhấn trọng âm)\n- **Nghĩa:** (Ghi ngắn gọn các nghĩa của từ)\n- **Ví dụ:** (Cung cấp 2-3 câu ví dụ có cả bản gốc và bản dịch tiếng Việt)\n- **Ngữ pháp:** (Loại từ, cách dùng cơ bản, các lưu ý nếu có)`;
             const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
             try {
