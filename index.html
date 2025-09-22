@@ -6,7 +6,15 @@
     <title>Trình Phát Media và Tra Cứu Phụ Đề</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Lato:wght@300;400;700&family=Roboto+Mono:wght@400;700&family=Roboto+Slab:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --subtitle-font-size: 14px;
+            --subtitle-font-family: 'Inter', sans-serif;
+            --subtitle-font-weight: 400;
+        }
         /* Tùy chỉnh thanh cuộn */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #2d3748; }
@@ -23,110 +31,136 @@
             background-color: #4a5568;
             color: #f7fafc;
         }
-        /* Style cho layout chính */
-        html, body {
-            height: 100%;
-            overflow: hidden; /* Ngăn cuộn trang chính */
-        }
         #control-panel {
-            overflow-y: auto; /* Cho phép cuộn bảng điều khiển */
+            overflow-y: auto;
+            transition: width 0.3s ease, min-width 0.3s ease, padding 0.3s ease, opacity 0.3s ease;
         }
-        #resizer {
-            flex-shrink: 0; /* Ngăn thanh kéo co lại */
+        #resizer { flex-shrink: 0; }
+        #main-content { min-width: 0; }
+        #media-wrapper { flex: 1; min-height: 0; }
+        #mediaPlayer { object-fit: contain; }
+        .tab-button.active { border-color: #3b82f6; color: #eff6ff; }
+        
+        /* Subtitle Column Styling */
+        #subtitleContainer {
+            font-size: var(--subtitle-font-size);
+            font-family: var(--subtitle-font-family);
+            font-weight: var(--subtitle-font-weight);
         }
-        #main-content {
-            min-width: 0; /* Cho phép phần media co lại */
+        .subtitle-column {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 8px;
         }
-        #media-wrapper {
-            flex: 1; /* Đảm bảo wrapper lấp đầy không gian còn lại */
-            min-height: 0; /* Cần thiết cho flexbox hoạt động đúng trong mọi trường hợp */
+        .subtitle-line {
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
         }
-        /* CSS cho media để luôn vừa vặn */
-        #mediaPlayer {
-            /* Luôn giữ tỷ lệ khung hình và nằm gọn trong vùng chứa */
-            object-fit: contain; 
+        .subtitle-line:hover {
+            background-color: #374151; /* gray-700 */
+        }
+        .subtitle-line.highlight {
+            background-color: #1d4ed8; /* blue-700 */
+            color: white;
+            font-weight: bold;
         }
 
-        /* --- Responsive Layout Logic --- */
-        /* On large screens (lg), create a fixed, non-scrolling layout */
+        /* Responsive Layout Logic */
+        html, body { min-height: 100%; }
         @media (min-width: 1024px) {
-            html, body {
-                height: 100%;
-                overflow: hidden;
-            }
-            body {
-                display: flex;
-                flex-direction: column;
-            }
-            .container-wrapper {
-                flex-grow: 1;
-                min-height: 0;
-            }
-            #main-container {
-                height: 100%;
-            }
+            html, body { height: 100%; overflow: hidden; }
+            body { display: flex; flex-direction: column; }
+            .container-wrapper { flex-grow: 1; min-height: 0; }
+            #main-container { height: 100%; }
         }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-200 font-sans leading-normal tracking-normal flex flex-col h-screen">
+<body class="bg-gray-900 text-gray-200 font-sans leading-normal tracking-normal">
 
-    <header class="text-center py-2 flex-shrink-0">
+    <header class="text-center py-2 flex-shrink-0 flex items-center justify-center relative">
+        <button id="menu-toggle" class="absolute left-4 top-1/2 -translate-y-1/2 p-2 text-xl text-gray-400 hover:text-white">
+            <i class="fas fa-bars"></i>
+        </button>
         <h1 class="text-2xl font-bold text-white">Học Ngoại Ngữ Qua Media</h1>
     </header>
 
     <div class="container-wrapper container mx-auto px-4 lg:px-8 pb-4">
         <div id="main-container" class="flex flex-col lg:flex-row h-full">
             
-            <!-- Bảng điều khiển -->
-            <aside id="control-panel" class="bg-gray-800 p-6 rounded-lg shadow-lg flex-shrink-0 lg:w-1/3 mb-8 lg:mb-0" style="min-width: 300px; max-width: 50vw;">
-                <!-- Giới thiệu và Hướng dẫn -->
-                <div class="mb-6 p-3 bg-gray-900 border border-blue-500/50 rounded-lg text-gray-300 text-sm">
-                    <h2 class="text-lg font-bold mb-2 text-blue-300"><i class="fas fa-info-circle mr-2"></i>Hướng dẫn</h2>
-                    <ul class="list-disc list-inside space-y-1">
-                        <li><b>Bước 1:</b> Tải media (video/audio) và file phụ đề (.srt).</li>
-                        <li><b>Bước 2:</b> Chọn đúng ngôn ngữ của phụ đề.</li>
-                        <li><b>Bước 3:</b> Nhấn vào 1 từ hoặc kéo chọn cụm từ để tra cứu.</li>
-                    </ul>
-                    <p class="mt-2">
-                        <i class="fas fa-magic-wand-sparkles mr-1 text-yellow-400"></i>
-                        <a href="https://colab.research.google.com/drive/1itmzYafvZ5zzhcPT8cnbbFvpLOiH5wzI?usp=sharing" target="_blank" class="font-bold text-blue-400 hover:underline">Tạo Sub tự động tại đây</a>.
-                    </p>
-                </div>
-
+            <aside id="control-panel" class="bg-gray-800 p-6 rounded-lg shadow-lg flex-shrink-0 lg:w-1/3 mb-8 lg:mb-0" style="min-width: 300px; max-width: 60vw;">
                 <div class="mb-4">
                     <label class="block mb-2 font-bold text-sm" for="mediaUrl">1. Tải Media (Video/Audio)</label>
                     <input type="text" id="mediaUrl" placeholder="Dán link media (MP4, MP3,...)" class="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                     <span class="text-center block my-2 text-gray-500 text-xs">hoặc</span>
-                    <input type="file" id="mediaFile" accept="video/*, audio/*" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
+                    <input type="file" id="mediaFile" accept="video/*, audio/*, .mkv" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700">
                 </div>
 
-                <div class="mb-4">
-                    <label class="block mb-2 font-bold text-sm" for="srtFile">2. Tải File Phụ Đề (.srt)</label>
-                    <input type="file" id="srtFile" accept=".srt" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700">
+                <div class="space-y-4 mb-4">
+                    <div class="p-3 bg-gray-900/50 rounded-lg">
+                        <p class="font-bold text-sm mb-2 text-blue-300">Phụ Đề 1 (Chính)</p>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <input type="file" id="srtFile1" accept=".srt" class="flex-grow w-full text-sm text-gray-400 file:mr-2 file:py-2 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700">
+                            <select id="languageSelect1" class="w-full sm:w-auto p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"></select>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-gray-900/50 rounded-lg">
+                        <p class="font-bold text-sm mb-2 text-green-300">Phụ Đề 2</p>
+                         <div class="flex flex-col sm:flex-row gap-2">
+                            <input type="file" id="srtFile2" accept=".srt" class="flex-grow w-full text-sm text-gray-400 file:mr-2 file:py-2 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700">
+                            <select id="languageSelect2" class="w-full sm:w-auto p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"></select>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-gray-900/50 rounded-lg">
+                        <p class="font-bold text-sm mb-2 text-yellow-300">Phụ Đề 3</p>
+                         <div class="flex flex-col sm:flex-row gap-2">
+                            <input type="file" id="srtFile3" accept=".srt" class="flex-grow w-full text-sm text-gray-400 file:mr-2 file:py-2 file:px-3 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700">
+                            <select id="languageSelect3" class="w-full sm:w-auto p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-gray-900/50 rounded-lg mb-4">
+                    <p class="font-bold text-sm mb-2 text-cyan-300">Cài đặt Dịch Thuật</p>
+                    <div class="space-y-3">
+                        <div>
+                            <label for="primaryTargetLang" class="text-xs">Dịch từ ngoại ngữ sang:</label>
+                            <select id="primaryTargetLang" class="w-full p-2 bg-gray-700 border border-gray-600 rounded text-sm"></select>
+                        </div>
+                        <div>
+                            <label class="text-xs">Dịch từ Tiếng Việt sang (chọn nhiều):</label>
+                            <div id="vietnameseTargetLangs" class="grid grid-cols-2 gap-2 mt-1 max-h-24 overflow-y-auto p-2 bg-gray-700 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-gray-900/50 rounded-lg mb-6">
+                    <p class="font-bold text-sm mb-2 text-indigo-300">Tùy Chỉnh Phụ Đề</p>
+                    <div class="space-y-3">
+                        <div>
+                            <label for="fontSizeSlider" class="text-xs">Cỡ chữ: <span id="fontSizeValue">14</span>px</label>
+                            <input type="range" id="fontSizeSlider" min="12" max="24" value="14" class="w-full">
+                        </div>
+                        <div>
+                            <label for="fontFamilySelect" class="text-xs">Font chữ</label>
+                            <select id="fontFamilySelect" class="w-full p-2 bg-gray-700 border border-gray-600 rounded text-sm">
+                                <option value="'Inter', sans-serif|400">Inter (Thường)</option>
+                                <option value="'Roboto', sans-serif|300">Roboto (Mỏng)</option>
+                                <option value="'Roboto', sans-serif|400">Roboto (Thường)</option>
+                                <option value="'Lato', sans-serif|300">Lato (Mỏng)</option>
+                                <option value="'Lato', sans-serif|400">Lato (Thường)</option>
+                                <option value="'Roboto Slab', serif|400">Roboto Slab (Có chân)</option>
+                                <option value="'Roboto Mono', monospace|400">Roboto Mono (Monospace)</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="mb-6">
-                    <label for="languageSelect" class="block mb-2 font-bold text-sm">3. Chọn Ngôn Ngữ Phụ Đề</label>
-                    <select id="languageSelect" class="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-                        <option value="en-US">Tiếng Anh (English)</option>
-                        <option value="fr-FR">Tiếng Pháp (Français)</option>
-                        <option value="de-DE">Tiếng Đức (Deutsch)</option>
-                        <option value="es-ES">Tiếng Tây Ban Nha (Español)</option>
-                        <option value="pt-PT">Tiếng Bồ Đào Nha (Português)</option>
-                        <option value="it-IT">Tiếng Italia (Italiano)</option>
-                        <option value="ru-RU">Tiếng Nga (Русский)</option>
-                        <option value="cs-CZ">Tiếng Séc (Čeština)</option>
-                        <option value="no-NO">Tiếng Na Uy (Norsk)</option>
-                        <option value="zh-CN">Tiếng Trung (中文)</option>
-                        <option value="ja-JP">Tiếng Nhật (日本語)</option>
-                        <option value="ko-KR">Tiếng Hàn (한국어)</option>
-                        <option value="lo-LA">Tiếng Lào (ລາວ)</option>
-                        <option value="km-KH">Tiếng Khmer (ខ្មែរ)</option>
-                    </select>
-                </div>
-
-                <div class="mb-6">
-                    <label for="geminiApiKey" class="block mb-2 font-bold text-sm">4. Gemini API Key (Tùy chọn)</label>
+                    <label for="geminiApiKey" class="block mb-2 font-bold text-sm">Gemini API Key (Tùy chọn)</label>
                      <p class="text-xs text-gray-500 mb-2">Lấy API Key của bạn tại <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-400 hover:underline">Google AI Studio</a>.</p>
                     <div class="flex gap-2">
                         <input type="password" id="geminiApiKey" placeholder="Nhập API Key của bạn" class="w-full p-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
@@ -135,36 +169,41 @@
                 </div>
                 
                 <div>
-                    <h3 class="text-xl font-semibold mb-3 border-b-2 border-gray-700 pb-2">Lịch Sử Tra Cứu</h3>
+                    <div class="flex justify-between items-center border-b border-gray-700 mb-2">
+                        <div class="flex">
+                            <button id="history-tab" class="tab-button flex-1 py-2 px-4 text-sm font-semibold border-b-2 transition-colors active">Lịch Sử</button>
+                            <button id="bookmarks-tab" class="tab-button flex-1 py-2 px-4 text-sm font-semibold border-b-2 border-transparent text-gray-400 hover:text-white transition-colors">Đã Đánh Dấu</button>
+                        </div>
+                        <div>
+                             <button id="copy-history-btn" title="Sao chép Lịch sử" class="p-2 text-gray-400 hover:text-white"><i class="fas fa-copy"></i></button>
+                             <button id="copy-bookmarks-btn" title="Sao chép từ đã Đánh dấu" class="p-2 text-gray-400 hover:text-white hidden"><i class="fas fa-copy"></i></button>
+                        </div>
+                    </div>
                     <div id="history" class="h-48 overflow-y-auto bg-gray-900 p-3 rounded">
                         <p class="text-gray-500 italic">Chưa có từ nào được tra...</p>
+                    </div>
+                    <div id="bookmarks" class="h-48 overflow-y-auto bg-gray-900 p-3 rounded hidden">
+                        <p class="text-gray-500 italic">Chưa có từ nào được đánh dấu...</p>
                     </div>
                 </div>
             </aside>
             
-            <!-- Thanh kéo thay đổi kích thước -->
             <div id="resizer" class="hidden lg:block w-2 cursor-col-resize bg-gray-700 hover:bg-blue-600 transition-colors rounded-full mx-1"></div>
 
-            <!-- Khu vực media và phụ đề -->
             <main id="main-content" class="lg:flex-1 flex flex-col p-0 lg:pl-2 h-full">
-                <!-- Vùng chứa media, tự động co giãn -->
                 <div id="media-wrapper" class="bg-black rounded-lg shadow-lg overflow-hidden w-full flex items-center justify-center">
                     <video id="mediaPlayer" class="max-w-full max-h-full" controls></video>
                 </div>
-                <!-- Nút điều khiển Tua media -->
-                <div id="media-controls" class="flex items-center justify-center gap-4 py-2 flex-shrink-0">
-                    <button id="rewindBtn" class="text-gray-400 hover:text-white text-2xl p-2" title="Tua lại 10 giây">
-                        <i class="fas fa-backward"></i>
-                    </button>
-                    <button id="forwardBtn" class="text-gray-400 hover:text-white text-2xl p-2" title="Tua tới 10 giây">
-                        <i class="fas fa-forward"></i>
-                    </button>
+                <div id="media-controls" class="flex items-center justify-center gap-2 py-1 flex-shrink-0">
+                    <button id="rewind30Btn" class="text-gray-400 hover:text-white text-xl p-2" title="Tua lại 30 giây"><i class="fas fa-fast-backward"></i></button>
+                    <button id="rewindBtn" class="text-gray-400 hover:text-white text-xl p-2" title="Tua lại 10 giây"><i class="fas fa-backward"></i></button>
+                    <button id="forwardBtn" class="text-gray-400 hover:text-white text-xl p-2" title="Tua tới 10 giây"><i class="fas fa-forward"></i></button>
+                    <button id="forward30Btn" class="text-gray-400 hover:text-white text-xl p-2" title="Tua tới 30 giây"><i class="fas fa-fast-forward"></i></button>
                 </div>
-                <!-- Vùng chứa phụ đề -->
-                <div id="subtitleContainer" class="p-4 bg-gray-800 rounded-lg text-center w-full flex-shrink-0 h-45">
-                    <div id="prevSubtitle" class="text-gray-500 text-base sm:text-lg font-mono opacity-60 min-h-12"></div>
-                    <div id="currentSubtitle" class="text-gray-200 text-xl sm:text-xl font-mono h-16">Phụ đề sẽ hiển thị ở đây...</div>
-                    <div id="nextSubtitle" class="text-gray-500 text-base sm:text-lg font-mono opacity-60 h-12"></div>
+                <div id="subtitleContainer" class="p-4 bg-gray-800 rounded-lg w-full flex-shrink-0 h-48 flex gap-4 overflow-hidden">
+                    <div id="sub-column-1" class="subtitle-column hidden"></div>
+                    <div id="sub-column-2" class="subtitle-column hidden"></div>
+                    <div id="sub-column-3" class="subtitle-column hidden"></div>
                 </div>
             </main>
         </div>
@@ -177,6 +216,7 @@
                 <div class="flex items-center">
                     <h2 class="text-2xl font-bold">Tra cứu: "<span id="lookupWord" class="text-blue-400"></span>"</h2>
                     <button id="pronounceBtn" class="ml-4 p-2 bg-blue-600 hover:bg-blue-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"><i class="fas fa-volume-up"></i></button>
+                    <button id="bookmarkBtn" class="ml-2 p-2 bg-yellow-600 hover:bg-yellow-700 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500" title="Đánh dấu từ này"><i class="far fa-star"></i></button>
                 </div>
                 <button id="closeModal" class="text-3xl text-gray-500 hover:text-white">&times;</button>
             </div>
@@ -188,27 +228,99 @@
         const mediaPlayer = document.getElementById('mediaPlayer');
         const mediaUrlInput = document.getElementById('mediaUrl');
         const mediaFileInput = document.getElementById('mediaFile');
-        const srtFileInput = document.getElementById('srtFile');
-        const subtitleContainer = document.getElementById('subtitleContainer');
-        const prevSubtitleDiv = document.getElementById('prevSubtitle');
-        const currentSubtitleDiv = document.getElementById('currentSubtitle');
-        const nextSubtitleDiv = document.getElementById('nextSubtitle');
-        const languageSelect = document.getElementById('languageSelect');
+        
+        const subtitleInputs = [
+            { file: document.getElementById('srtFile1'), lang: document.getElementById('languageSelect1'), column: document.getElementById('sub-column-1'), data: [], currentIndex: -1 },
+            { file: document.getElementById('srtFile2'), lang: document.getElementById('languageSelect2'), column: document.getElementById('sub-column-2'), data: [], currentIndex: -1 },
+            { file: document.getElementById('srtFile3'), lang: document.getElementById('languageSelect3'), column: document.getElementById('sub-column-3'), data: [], currentIndex: -1 },
+        ];
+
         const historyContainer = document.getElementById('history');
+        const bookmarksContainer = document.getElementById('bookmarks');
+        const historyTab = document.getElementById('history-tab');
+        const bookmarksTab = document.getElementById('bookmarks-tab');
+        const copyHistoryBtn = document.getElementById('copy-history-btn');
+        const copyBookmarksBtn = document.getElementById('copy-bookmarks-btn');
+
         const modal = document.getElementById('dictionaryModal');
         const closeModalBtn = document.getElementById('closeModal');
         const lookupWordSpan = document.getElementById('lookupWord');
         const pronounceBtn = document.getElementById('pronounceBtn');
+        const bookmarkBtn = document.getElementById('bookmarkBtn');
         const modalContent = document.getElementById('modalContent');
         const geminiApiKeyInput = document.getElementById('geminiApiKey');
         const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
         const rewindBtn = document.getElementById('rewindBtn');
         const forwardBtn = document.getElementById('forwardBtn');
+        const rewind30Btn = document.getElementById('rewind30Btn');
+        const forward30Btn = document.getElementById('forward30Btn');
+        const menuToggle = document.getElementById('menu-toggle');
+        const controlPanel = document.getElementById('control-panel');
+        const resizer = document.getElementById('resizer');
+        const fontSizeSlider = document.getElementById('fontSizeSlider');
+        const fontSizeValue = document.getElementById('fontSizeValue');
+        const fontFamilySelect = document.getElementById('fontFamilySelect');
+        const subtitleContainer = document.getElementById('subtitleContainer');
+        const primaryTargetLangSelect = document.getElementById('primaryTargetLang');
+        const vietnameseTargetLangsContainer = document.getElementById('vietnameseTargetLangs');
 
-        let subtitles = [];
-        let savedWords = new Set();
-        let currentSubtitleIndex = -1;
+
+        let historyMap = new Map();
+        let bookmarkedWords = new Set();
         let wasMediaPlaying = false;
+        
+        const languages = { "vi-VN": "Tiếng Việt", "en-US": "Tiếng Anh", "fr-FR": "Tiếng Pháp", "de-DE": "Tiếng Đức", "es-ES": "Tiếng TBN", "pt-PT": "Tiếng BĐN", "it-IT": "Tiếng Italia", "ru-RU": "Tiếng Nga", "cs-CZ": "Tiếng Séc", "no-NO": "Tiếng Na Uy", "zh-CN": "Tiếng Trung", "ja-JP": "Tiếng Nhật", "ko-KR": "Tiếng Hàn", "lo-LA": "Tiếng Lào", "km-KH": "Tiếng Khmer" };
+
+        function populateLanguageSelectors() {
+            subtitleInputs.forEach(input => {
+                const select = input.lang;
+                select.innerHTML = '<option value="">-- Chọn ngôn ngữ --</option>';
+                for (const [code, name] of Object.entries(languages)) {
+                    const option = document.createElement('option');
+                    option.value = code;
+                    option.textContent = name;
+                    select.appendChild(option);
+                }
+            });
+        }
+        
+        function populateTranslationSettings() {
+            primaryTargetLangSelect.innerHTML = '';
+            for (const [code, name] of Object.entries(languages)) {
+                 const option = document.createElement('option');
+                 option.value = code;
+                 option.textContent = name;
+                 primaryTargetLangSelect.appendChild(option);
+            }
+            primaryTargetLangSelect.value = localStorage.getItem('primaryTargetLang') || 'vi-VN';
+
+            vietnameseTargetLangsContainer.innerHTML = '';
+            const savedVietnameseTargets = JSON.parse(localStorage.getItem('vietnameseTargetLangs')) || ['en-US', 'ru-RU', 'zh-CN'];
+            for (const [code, name] of Object.entries(languages)) {
+                if (code === 'vi-VN') continue;
+                const div = document.createElement('div');
+                div.className = 'flex items-center';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `vt-target-${code}`;
+                checkbox.value = code;
+                checkbox.checked = savedVietnameseTargets.includes(code);
+                checkbox.className = 'w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500';
+                const label = document.createElement('label');
+                label.htmlFor = `vt-target-${code}`;
+                label.textContent = name;
+                label.className = 'ml-2 text-xs font-medium text-gray-300';
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                vietnameseTargetLangsContainer.appendChild(div);
+            }
+        }
+
+        function saveTranslationSettings() {
+             localStorage.setItem('primaryTargetLang', primaryTargetLangSelect.value);
+             const selectedVietnameseTargets = Array.from(vietnameseTargetLangsContainer.querySelectorAll('input:checked')).map(cb => cb.value);
+             localStorage.setItem('vietnameseTargetLangs', JSON.stringify(selectedVietnameseTargets));
+        }
 
         function parseSRT(srtText) {
             const normalizedText = srtText.replace(/\r\n/g, '\n');
@@ -217,7 +329,6 @@
             let match;
             while ((match = pattern.exec(normalizedText)) !== null) {
                 subs.push({
-                    id: parseInt(match[1], 10),
                     startTime: srtTimeToSeconds(match[2]),
                     endTime: srtTimeToSeconds(match[3]),
                     text: match[4].replace(/\n/g, ' ').trim()
@@ -233,51 +344,52 @@
                    parseInt(parts[2], 10) +
                    parseInt(parts[3], 10) / 1000;
         }
+
+        function renderFullTranscript(subTrack) {
+            subTrack.column.innerHTML = ''; // Clear previous content
+            subTrack.data.forEach((line, index) => {
+                const p = document.createElement('p');
+                p.id = `sub-line-${subtitleInputs.indexOf(subTrack)}-${index}`;
+                p.dataset.startTime = line.startTime;
+                p.className = 'subtitle-line';
+                makeInteractive(p, line.text, subTrack.lang.value);
+                subTrack.column.appendChild(p);
+            });
+        }
         
-        function updateSubtitle() {
+        function updateAllSubtitles() {
             const currentTime = mediaPlayer.currentTime;
-            let foundSubIndex = -1;
-
-            for (let i = 0; i < subtitles.length; i++) {
-                if (currentTime >= subtitles[i].startTime && currentTime <= subtitles[i].endTime) {
-                    foundSubIndex = i;
-                    break;
+            subtitleInputs.forEach((subTrack, trackIndex) => {
+                if(subTrack.data.length === 0) return;
+                
+                let foundSubIndex = -1;
+                for (let i = 0; i < subTrack.data.length; i++) {
+                    if (currentTime >= subTrack.data[i].startTime && currentTime <= subTrack.data[i].endTime) {
+                        foundSubIndex = i;
+                        break;
+                    }
                 }
-            }
 
-            if (foundSubIndex !== currentSubtitleIndex) {
-                 currentSubtitleIndex = foundSubIndex;
-                 displaySubtitleContext();
-            }
+                if (foundSubIndex !== subTrack.currentIndex) {
+                    const oldLine = document.getElementById(`sub-line-${trackIndex}-${subTrack.currentIndex}`);
+                    if (oldLine) oldLine.classList.remove('highlight');
+                    
+                    const newLine = document.getElementById(`sub-line-${trackIndex}-${foundSubIndex}`);
+                    if (newLine) {
+                        newLine.classList.add('highlight');
+                        newLine.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+                    }
+                    
+                    subTrack.currentIndex = foundSubIndex;
+                }
+            });
         }
 
-        function displaySubtitleContext() {
-            if (currentSubtitleIndex === -1) {
-                makeInteractive(prevSubtitleDiv, '');
-                makeInteractive(currentSubtitleDiv, '<p class="text-gray-500">.....</p>');
-                makeInteractive(nextSubtitleDiv, '');
-                return;
-            }
-            
-            const prevText = (currentSubtitleIndex > 0) ? subtitles[currentSubtitleIndex - 1].text : '';
-            const currentText = subtitles[currentSubtitleIndex].text;
-            const nextText = (currentSubtitleIndex < subtitles.length - 1) ? subtitles[currentSubtitleIndex + 1].text : '';
-
-            makeInteractive(prevSubtitleDiv, prevText);
-            makeInteractive(currentSubtitleDiv, currentText);
-            makeInteractive(nextSubtitleDiv, nextText);
-        }
-
-        function makeInteractive(element, text) {
+        function makeInteractive(element, text, lang) {
             element.innerHTML = '';
-             if (!text || text.startsWith('<p')) {
-                element.innerHTML = text || '';
-                return;
-            }
-
-            const lang = languageSelect.value;
+            if (!text) return;
+            
             let parts;
-
             if (lang === 'zh-CN' || lang === 'ja-JP') {
                 parts = text.split('');
             } else {
@@ -296,22 +408,37 @@
             });
         }
         
-        function handleWordClick(rawWord) {
+        function handleWordClick(rawWord, lang) {
+            if (!lang) {
+                alert("Vui lòng chọn ngôn ngữ cho phụ đề này để tra cứu.");
+                return;
+            }
             wasMediaPlaying = !mediaPlayer.paused;
             mediaPlayer.pause();
             
             const word = rawWord.trim().replace(/[.,!?;:"“”]/g, '').toLowerCase();
             if (!word) return;
-            showDictionaryModal(word);
-            saveWordToHistory(word);
+            showDictionaryModal(word, lang);
+            saveWordToHistory(word, lang);
         }
 
-        function showDictionaryModal(word) {
-            const lang = languageSelect.value;
-            const langName = languageSelect.options[languageSelect.selectedIndex].text;
+        function showDictionaryModal(word, lang) {
+            const langName = languages[lang] || lang;
             const encodedWord = encodeURIComponent(word);
 
             lookupWordSpan.textContent = word;
+            pronounceBtn.style.display = (lang === 'vi-VN') ? 'none' : 'block';
+
+            const bookmarkIcon = bookmarkBtn.querySelector('i');
+            if (bookmarkedWords.has(word)) {
+                bookmarkIcon.classList.remove('far');
+                bookmarkIcon.classList.add('fas', 'text-yellow-400');
+            } else {
+                bookmarkIcon.classList.remove('fas', 'text-yellow-400');
+                bookmarkIcon.classList.add('far');
+            }
+            bookmarkBtn.onclick = () => toggleBookmark(word);
+
             pronounceBtn.onclick = () => {
                 window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(word);
@@ -323,34 +450,10 @@
                 window.speechSynthesis.speak(utterance);
             };
             
-            const youglishLangMap = {
-                'en-US': 'english', 'ru-RU': 'russian', 'zh-CN': 'chinese',
-                'fr-FR': 'french', 'de-DE': 'german', 'ja-JP': 'japanese',
-                'ko-KR': 'korean', 'it-IT': 'italian', 'pt-PT': 'portuguese',
-                'es-ES': 'spanish'
-            };
-            const youglishLang = youglishLangMap[lang];
-            let youglishLinkHTML = '';
-            if (youglishLang) {
-                const youglishLink = `https://youglish.com/pronounce/${encodedWord}/${youglishLang}`;
-                youglishLinkHTML = `<a href="${youglishLink}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fab fa-youtube mr-2 text-red-500"></i> Mở YouGlish (Phát âm trong ngữ cảnh)</a>`;
-            }
-
-            const googleTranslateLangMap = {
-                'en-US': 'en', 'ru-RU': 'ru', 'zh-CN': 'zh-CN', 'fr-FR': 'fr',
-                'de-DE': 'de', 'ja-JP': 'ja', 'ko-KR': 'ko', 'it-IT': 'it',
-                'pt-PT': 'pt', 'es-ES': 'es', 'cs-CZ': 'cs', 'no-NO': 'no',
-                'km-KH': 'km', 'lo-LA': 'lo'
-            };
-            const googleLangCode = googleTranslateLangMap[lang] || lang.split('-')[0];
-
             modalContent.innerHTML = `
                 <div>
                     <h3 class="font-bold text-lg mb-2 text-blue-300">Tra cứu nhanh</h3>
-                    <div class="space-y-2">
-                        <a href="https://translate.google.com/?sl=${googleLangCode}&tl=vi&text=${encodedWord}&op=translate" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-language mr-2 text-blue-400"></i> Mở Google Dịch (Việt)</a>
-                        ${youglishLinkHTML}
-                    </div>
+                    <div id="quick-links" class="space-y-2"></div>
                 </div>
                 <div>
                     <div class="flex justify-between items-center mb-2">
@@ -358,7 +461,7 @@
                         <button id="copyGeminiBtn" title="Sao chép nội dung" class="p-2 text-gray-400 hover:text-white"><i class="fas fa-copy"></i></button>
                     </div>
                     <button id="geminiQueryBtn" class="w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                        <i class="fas fa-robot mr-2"></i> Lấy thông tin (Trọng âm, ví dụ, ngữ pháp)
+                        <i class="fas fa-robot mr-2"></i> Lấy thông tin chi tiết
                     </button>
                     <div id="geminiResult" class="mt-2 p-3 bg-gray-900 rounded text-gray-300 whitespace-pre-wrap min-h-[50px]"></div>
                 </div>
@@ -367,45 +470,81 @@
                     <div id="externalLinks" class="space-y-2"></div>
                 </div>`;
             
-            document.getElementById('geminiQueryBtn').addEventListener('click', () => queryGemini(word, langName));
-            document.getElementById('copyGeminiBtn').addEventListener('click', copyGeminiResult);
-
-            const externalLinksContainer = document.getElementById('externalLinks');
+            generateLookupLinks(word, lang);
             
-            const vtudienLangMap = {
-                'en-US': 'anh-viet', 'ru-RU': 'nga-viet', 'zh-CN': 'trung-viet',
-                'fr-FR': 'phap-viet', 'de-DE': 'duc-viet', 'ja-JP': 'nhat-viet',
-                'ko-KR': 'han-viet', 'it-IT': 'italia-viet', 'cs-CZ': 'sec-viet',
-                'es-ES': 'taybannha-viet', 'pt-PT': 'bodaonha-viet', 'no-NO': 'nauy-viet',
-                'km-KH': 'khmer-viet', 'lo-LA': 'lao-viet'
-            };
-            const vtudienSlug = vtudienLangMap[lang] || 'anh-viet';
-            let links = `<a href="https://vtudien.com/${vtudienSlug}/dictionary/nghia-cua-tu-${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-book mr-2"></i> Tra VTuDien</a>`;
+            const geminiResultContainer = document.getElementById('geminiResult');
+            const geminiQueryBtn = document.getElementById('geminiQueryBtn');
+            const cachedData = historyMap.get(word);
 
-            const secondDictMap = {
-                'en-US': `<a href="https://dictionary.cambridge.org/dictionary/english-vietnamese/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-graduation-cap mr-2"></i> Tra Cambridge Dictionary</a>`,
-                'ru-RU': `<a href="https://ru.wiktionary.org/wiki/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Wiktionary (Nga)</a>`,
-                'zh-CN': `<a href="https://hanzii.net/search/word/${encodedWord}?hl=vi" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-pen-fancy mr-2"></i> Tra Hanzii Dict</a>`,
-                'fr-FR': `<a href="https://www.larousse.fr/dictionnaires/francais/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Larousse (Pháp)</a>`,
-                'de-DE': `<a href="https://www.duden.de/suchen/dudenonline/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Duden (Đức)</a>`,
-                'ja-JP': `<a href="https://jisho.org/search/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-torii-gate mr-2"></i> Tra Jisho (Nhật)</a>`,
-                'ko-KR': `<a href="https://ko.dict.naver.com/#/search?query=${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-book-open mr-2"></i> Tra Naver Dict (Hàn)</a>`,
-                'it-IT': `<a href="https://www.collinsdictionary.com/dictionary/italian-english/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Collins (Ý)</a>`,
-                'cs-CZ': `<a href="https://slovnik.seznam.cz/preklad/cesky_anglicky/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Seznam (Séc)</a>`,
-                'es-ES': `<a href="https://www.spanishdict.com/translate/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-book-open mr-2"></i> Tra SpanishDict</a>`,
-                'pt-PT': `<a href="https://www.linguee.com/portuguese-english/search?source=auto&query=${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Linguee (Bồ Đào Nha)</a>`,
-                'no-NO': `<a href="https://ordbokene.no/bm/search?q=${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Ordbøkene (Na Uy)</a>`,
-                'km-KH': `<a href="https://en.wiktionary.org/wiki/${encodedWord}#Khmer" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Wiktionary (Khmer)</a>`,
-                'lo-LA': `<a href="https://en.wiktionary.org/wiki/${encodedWord}#Lao" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Wiktionary (Lao)</a>`
-            };
-            links += secondDictMap[lang] || '';
-
-            links += `<a href="https://www.google.com/search?q=${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fab fa-google mr-2"></i> Tra Google Search</a>`;
-            externalLinksContainer.innerHTML = links;
+            if (cachedData && cachedData.geminiResponse) {
+                geminiResultContainer.innerText = cachedData.geminiResponse;
+                geminiQueryBtn.disabled = true;
+                geminiQueryBtn.innerHTML = `<i class="fas fa-check mr-2"></i> Đã có giải thích từ AI (Lịch sử)`;
+            } else {
+                geminiQueryBtn.addEventListener('click', () => queryGemini(word, lang, langName));
+            }
+            document.getElementById('copyGeminiBtn').addEventListener('click', copyGeminiResult);
+            
             modal.classList.remove('hidden');
         }
 
-        async function queryGemini(word, langName) {
+        function generateLookupLinks(word, lang) {
+            const encodedWord = encodeURIComponent(word);
+            const quickLinksContainer = document.getElementById('quick-links');
+            const externalLinksContainer = document.getElementById('externalLinks');
+            quickLinksContainer.innerHTML = '';
+            externalLinksContainer.innerHTML = '';
+            
+            const googleTranslateLangMap = { 'en-US': 'en', 'ru-RU': 'ru', 'zh-CN': 'zh-CN', 'fr-FR': 'fr', 'de-DE': 'de', 'ja-JP': 'ja', 'ko-KR': 'ko', 'it-IT': 'it', 'pt-PT': 'pt', 'es-ES': 'es', 'cs-CZ': 'cs', 'no-NO': 'no', 'km-KH': 'km', 'lo-LA': 'lo', 'vi-VN': 'vi' };
+            const vtudienLangMap = { 'en-US': 'anh', 'ru-RU': 'nga', 'zh-CN': 'trung', 'fr-FR': 'phap', 'de-DE': 'duc', 'ja-JP': 'nhat', 'ko-KR': 'han', 'it-IT': 'italia', 'cs-CZ': 'sec', 'es-ES': 'taybannha', 'pt-PT': 'bodaonha', 'no-NO': 'nauy', 'km-KH': 'khmer', 'lo-LA': 'lao', 'vi-VN': 'viet' };
+            
+            const sourceGoogleCode = googleTranslateLangMap[lang];
+            const sourceVtudienSlug = vtudienLangMap[lang];
+
+            if (lang === 'vi-VN') {
+                const targets = JSON.parse(localStorage.getItem('vietnameseTargetLangs')) || ['en-US'];
+                targets.forEach(targetLangCode => {
+                    const targetGoogleCode = googleTranslateLangMap[targetLangCode];
+                    const targetVtudienSlug = vtudienLangMap[targetLangCode];
+                    if (targetGoogleCode) {
+                        quickLinksContainer.innerHTML += `<a href="https://translate.google.com/?sl=vi&tl=${targetGoogleCode}&text=${encodedWord}&op=translate" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-language mr-2"></i> Dịch sang ${languages[targetLangCode]}</a>`;
+                    }
+                    if (targetVtudienSlug) {
+                        externalLinksContainer.innerHTML += `<a href="https://vtudien.com/viet-${targetVtudienSlug}/dictionary/nghia-cua-tu-${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-book mr-2"></i> Tra VTuDien (Việt-${languages[targetLangCode]})</a>`;
+                    }
+                });
+                externalLinksContainer.innerHTML += `<a href="https://vtudien.com/viet-viet/dictionary/nghia-cua-tu-${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-book mr-2"></i> Tra VTuDien (Việt-Việt)</a>`;
+
+            } else {
+                const targetLangCode = localStorage.getItem('primaryTargetLang') || 'vi-VN';
+                const targetGoogleCode = googleTranslateLangMap[targetLangCode];
+                const targetVtudienSlug = vtudienLangMap[targetLangCode];
+
+                if(targetGoogleCode) {
+                     quickLinksContainer.innerHTML += `<a href="https://translate.google.com/?sl=${sourceGoogleCode}&tl=${targetGoogleCode}&text=${encodedWord}&op=translate" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-language mr-2 text-blue-400"></i> Mở Google Dịch (${languages[targetLangCode]})</a>`;
+                }
+
+                const youglishLangMap = { 'en-US': 'english', 'ru-RU': 'russian', 'zh-CN': 'chinese', 'fr-FR': 'french', 'de-DE': 'german', 'ja-JP': 'japanese', 'ko-KR': 'korean', 'it-IT': 'italian', 'pt-PT': 'portuguese', 'es-ES': 'spanish' };
+                const youglishLang = youglishLangMap[lang];
+                if (youglishLang) {
+                    quickLinksContainer.innerHTML += `<a href="https://youglish.com/pronounce/${encodedWord}/${youglishLang}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fab fa-youtube mr-2 text-red-500"></i> Mở YouGlish</a>`;
+                }
+                
+                if (targetVtudienSlug) {
+                     externalLinksContainer.innerHTML += `<a href="https://vtudien.com/${sourceVtudienSlug}-${targetVtudienSlug}/dictionary/nghia-cua-tu-${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-book mr-2"></i> Tra VTuDien</a>`;
+                }
+                
+                const secondDictMap = {
+                    'en-US': `<a href="https://dictionary.cambridge.org/dictionary/english-vietnamese/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-graduation-cap mr-2"></i> Tra Cambridge</a>`,
+                    'ru-RU': `<a href="https://ru.wiktionary.org/wiki/${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-atlas mr-2"></i> Tra Wiktionary</a>`,
+                    'zh-CN': `<a href="https://hanzii.net/search/word/${encodedWord}?hl=vi" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fas fa-pen-fancy mr-2"></i> Tra Hanzii</a>`,
+                };
+                externalLinksContainer.innerHTML += secondDictMap[lang] || '';
+            }
+             externalLinksContainer.innerHTML += `<a href="https://www.google.com/search?q=${encodedWord}" target="_blank" class="block w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"><i class="fab fa-google mr-2"></i> Tra Google Search</a>`;
+        }
+
+        async function queryGemini(word, lang, langName) {
             const apiKey = localStorage.getItem('geminiApiKey');
             const geminiResultContainer = document.getElementById('geminiResult');
             const geminiQueryBtn = document.getElementById('geminiQueryBtn');
@@ -437,11 +576,23 @@
                 const text = data.candidates[0].content.parts[0].text;
                 geminiResultContainer.innerText = text;
 
+                // Save to cache
+                const currentData = historyMap.get(word) || { lang: lang };
+                currentData.geminiResponse = text;
+                historyMap.set(word, currentData);
+                localStorage.setItem('historyMap', JSON.stringify(Array.from(historyMap.entries())));
+                geminiQueryBtn.innerHTML = `<i class="fas fa-check mr-2"></i> Đã có giải thích từ AI`;
+
             } catch (error) {
                 console.error("Gemini API error:", error);
                 geminiResultContainer.innerHTML = `<p class="text-red-400">Đã xảy ra lỗi: ${error.message}</p>`;
             } finally {
                 geminiQueryBtn.disabled = false;
+                 if(!geminiResultContainer.innerText.includes("Đã xảy ra lỗi")){
+                    geminiQueryBtn.disabled = true;
+                } else {
+                    geminiQueryBtn.innerHTML = `<i class="fas fa-robot mr-2"></i> Lấy thông tin chi tiết`;
+                }
             }
         }
 
@@ -464,34 +615,43 @@
             }
         }
         
-        function saveWordToHistory(word) {
-            if (!savedWords.has(word)) {
-                savedWords.add(word);
+        function saveWordToHistory(word, lang) {
+            if (!historyMap.has(word)) {
+                historyMap.set(word, { lang: lang, geminiResponse: null });
+                localStorage.setItem('historyMap', JSON.stringify(Array.from(historyMap.entries())));
                 updateHistoryUI();
             }
         }
 
         function updateHistoryUI() {
-            if (savedWords.size === 0) {
+            if (historyMap.size === 0) {
                 historyContainer.innerHTML = '<p class="text-gray-500 italic">Chưa có từ nào được tra...</p>';
                 return;
             }
             historyContainer.innerHTML = '';
             const wordList = document.createElement('div');
             wordList.className = 'flex flex-wrap gap-2';
-            savedWords.forEach(word => {
+            historyMap.forEach((data, word) => {
                 const wordTag = document.createElement('span');
                 wordTag.textContent = word;
                 wordTag.className = 'bg-blue-600 text-white text-sm font-semibold px-2.5 py-1 rounded-full cursor-pointer hover:bg-blue-700';
-                wordTag.onclick = () => handleWordClick(word);
+                wordTag.onclick = () => showDictionaryModal(word, data.lang);
                 wordList.appendChild(wordTag);
             });
             historyContainer.appendChild(wordList);
         }
 
-        function loadApiKey() {
-            const savedKey = localStorage.getItem('geminiApiKey');
-            if (savedKey) geminiApiKeyInput.value = savedKey;
+        function loadSavedData() {
+            const savedHistory = localStorage.getItem('historyMap');
+            if (savedHistory) {
+                historyMap = new Map(JSON.parse(savedHistory));
+                updateHistoryUI();
+            }
+            const savedBookmarks = localStorage.getItem('bookmarkedWords');
+            if (savedBookmarks) {
+                bookmarkedWords = new Set(JSON.parse(savedBookmarks));
+                updateBookmarksUI();
+            }
         }
 
         function saveApiKey() {
@@ -504,6 +664,69 @@
                 alert('Đã xóa Gemini API Key!');
             }
         }
+
+        function toggleBookmark(word) {
+            const icon = bookmarkBtn.querySelector('i');
+            if (bookmarkedWords.has(word)) {
+                bookmarkedWords.delete(word);
+                icon.classList.remove('fas', 'text-yellow-400');
+                icon.classList.add('far');
+            } else {
+                bookmarkedWords.add(word);
+                icon.classList.add('fas', 'text-yellow-400');
+                icon.classList.remove('far');
+            }
+            localStorage.setItem('bookmarkedWords', JSON.stringify(Array.from(bookmarkedWords)));
+            updateBookmarksUI();
+        }
+        
+        function updateBookmarksUI() {
+            if (bookmarkedWords.size === 0) {
+                bookmarksContainer.innerHTML = '<p class="text-gray-500 italic">Chưa có từ nào được đánh dấu...</p>';
+                return;
+            }
+            bookmarksContainer.innerHTML = '';
+            const wordList = document.createElement('div');
+            wordList.className = 'flex flex-wrap gap-2';
+            bookmarkedWords.forEach(word => {
+                const wordTag = document.createElement('span');
+                wordTag.textContent = word;
+                const data = historyMap.get(word);
+                wordTag.className = 'bg-yellow-600 text-white text-sm font-semibold px-2.5 py-1 rounded-full cursor-pointer hover:bg-yellow-700';
+                if(data) {
+                    wordTag.onclick = () => showDictionaryModal(word, data.lang);
+                }
+                wordList.appendChild(wordTag);
+            });
+            bookmarksContainer.appendChild(wordList);
+        }
+        
+        function copyListToClipboard(type) {
+            let content = '';
+            const list = (type === 'bookmarks') ? bookmarkedWords : new Set(historyMap.keys());
+            
+            list.forEach(word => {
+                content += `${word.toUpperCase()}\n`;
+                content += '-----------------\n';
+                const data = historyMap.get(word);
+                if (data && data.geminiResponse) {
+                    content += `${data.geminiResponse}\n\n`;
+                } else {
+                    content += "(Chưa có giải thích từ AI)\n\n";
+                }
+            });
+
+            if(!content) {
+                alert(`Danh sách trống!`);
+                return;
+            }
+
+            navigator.clipboard.writeText(content.trim()).then(() => {
+                alert(`Đã sao chép ${list.size} từ vào clipboard!`);
+            }).catch(err => {
+                console.error('Lỗi sao chép: ', err);
+            });
+        }
         
         function closeModal() {
             modal.classList.add('hidden');
@@ -513,9 +736,36 @@
             }
         }
 
+        function applyFontSettings() {
+            const fontSize = localStorage.getItem('subtitleFontSize') || '14';
+            const fontValue = localStorage.getItem('subtitleFontFamily') || "'Inter', sans-serif|400";
+            const [fontFamily, fontWeight] = fontValue.split('|');
+
+            document.documentElement.style.setProperty('--subtitle-font-size', `${fontSize}px`);
+            document.documentElement.style.setProperty('--subtitle-font-family', fontFamily);
+            document.documentElement.style.setProperty('--subtitle-font-weight', fontWeight);
+            
+            fontSizeSlider.value = fontSize;
+            fontSizeValue.textContent = fontSize;
+            fontFamilySelect.value = fontValue;
+        }
+
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
-            loadApiKey();
+            populateLanguageSelectors();
+            populateTranslationSettings();
+            loadSavedData();
+            applyFontSettings();
+            
+            const savedKey = localStorage.getItem('geminiApiKey');
+            if (savedKey) geminiApiKeyInput.value = savedKey;
+            
+            const panelVisible = localStorage.getItem('controlPanelVisible') !== 'false';
+            if (!panelVisible) {
+                controlPanel.classList.add('hidden');
+                if(resizer) resizer.classList.add('hidden');
+            }
+            
             initResizer();
         });
 
@@ -535,59 +785,119 @@
             }
         });
 
-        srtFileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    subtitles = parseSRT(e.target.result);
-                    if (subtitles.length > 0) {
-                        alert(`Đã tải và xử lý thành công ${subtitles.length} dòng phụ đề.`);
-                    } else {
-                        alert('Lỗi: Không thể đọc được file phụ đề. Vui lòng kiểm tra lại định dạng file .srt.');
-                    }
-                    currentSubtitleIndex = -1;
-                };
-                reader.readAsText(file, 'UTF-8');
-            }
+        subtitleInputs.forEach((subTrack, index) => {
+            subTrack.file.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if(file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        subTrack.data = parseSRT(e.target.result);
+                        subTrack.column.classList.remove('hidden');
+                        renderFullTranscript(subTrack);
+                        if(subTrack.data.length === 0) {
+                            alert(`Lỗi: Không đọc được file Phụ Đề ${index + 1}. Vui lòng kiểm tra định dạng.`);
+                        }
+                    };
+                    reader.readAsText(file, 'UTF-8');
+                }
+            });
+            subTrack.lang.addEventListener('change', () => {
+                if (subTrack.data.length > 0) {
+                    renderFullTranscript(subTrack);
+                }
+            });
         });
 
-        mediaPlayer.addEventListener('timeupdate', updateSubtitle);
+        mediaPlayer.addEventListener('timeupdate', updateAllSubtitles);
         closeModalBtn.addEventListener('click', closeModal);
         modal.addEventListener('click', (event) => {
             if (event.target === modal) {
                 closeModal();
             }
         });
-
-        rewindBtn.addEventListener('click', () => {
-            mediaPlayer.currentTime = Math.max(0, mediaPlayer.currentTime - 10);
-        });
-
-        forwardBtn.addEventListener('click', () => {
-            if (mediaPlayer.duration) {
-                mediaPlayer.currentTime = Math.min(mediaPlayer.duration, mediaPlayer.currentTime + 10);
-            }
-        });
-
+        
+        rewind30Btn.addEventListener('click', () => { mediaPlayer.currentTime = Math.max(0, mediaPlayer.currentTime - 30); });
+        rewindBtn.addEventListener('click', () => { mediaPlayer.currentTime = Math.max(0, mediaPlayer.currentTime - 10); });
+        forwardBtn.addEventListener('click', () => { if (mediaPlayer.duration) mediaPlayer.currentTime = Math.min(mediaPlayer.duration, mediaPlayer.currentTime + 10); });
+        forward30Btn.addEventListener('click', () => { if (mediaPlayer.duration) mediaPlayer.currentTime = Math.min(mediaPlayer.duration, mediaPlayer.currentTime + 30); });
+        
         subtitleContainer.addEventListener('mouseup', (event) => {
             const selection = window.getSelection();
             const selectedText = selection.toString().trim();
+            const parentLine = event.target.closest('.subtitle-line');
+            if (!parentLine) return;
             
+            const parentColumn = parentLine.closest('.subtitle-column');
+            if (!parentColumn) return;
+
+            const colIndex = parseInt(parentColumn.id.split('-')[2]) - 1;
+            const lang = subtitleInputs[colIndex].lang.value;
+
             if (selectedText) {
-                handleWordClick(selectedText);
-                selection.removeAllRanges(); // Bỏ chọn sau khi tra
+                handleWordClick(selectedText, lang);
+                selection.removeAllRanges(); 
             } else if (event.target.classList.contains('subtitle-word')) {
-                // Handle single click if no text was selected
-                handleWordClick(event.target.textContent);
+                handleWordClick(event.target.textContent, lang);
+            }
+        });
+        
+        subtitleContainer.addEventListener('click', (event) => {
+            const line = event.target.closest('.subtitle-line');
+            if (line && !event.target.classList.contains('subtitle-word') && window.getSelection().toString().trim() === '') {
+                mediaPlayer.currentTime = parseFloat(line.dataset.startTime);
             }
         });
 
+        historyTab.addEventListener('click', () => {
+            historyContainer.classList.remove('hidden');
+            bookmarksContainer.classList.add('hidden');
+            copyHistoryBtn.classList.remove('hidden');
+            copyBookmarksBtn.classList.add('hidden');
+            historyTab.classList.add('active');
+            bookmarksTab.classList.remove('active');
+        });
+
+        bookmarksTab.addEventListener('click', () => {
+            bookmarksContainer.classList.remove('hidden');
+            historyContainer.classList.add('hidden');
+            copyBookmarksBtn.classList.remove('hidden');
+            copyHistoryBtn.classList.add('hidden');
+            bookmarksTab.classList.add('active');
+            historyTab.classList.remove('active');
+        });
+
+        copyHistoryBtn.addEventListener('click', () => copyListToClipboard('history'));
+        copyBookmarksBtn.addEventListener('click', () => copyListToClipboard('bookmarks'));
+
+        menuToggle.addEventListener('click', () => {
+            const isHidden = controlPanel.classList.toggle('hidden');
+            if(resizer) resizer.classList.toggle('hidden', isHidden);
+            localStorage.setItem('controlPanelVisible', !isHidden);
+        });
+
+        fontSizeSlider.addEventListener('input', (e) => {
+            const newSize = e.target.value;
+            document.documentElement.style.setProperty('--subtitle-font-size', `${newSize}px`);
+            fontSizeValue.textContent = newSize;
+        });
+        fontSizeSlider.addEventListener('change', (e) => {
+             localStorage.setItem('subtitleFontSize', e.target.value);
+        });
+
+        fontFamilySelect.addEventListener('change', (e) => {
+            const fontValue = e.target.value;
+            const [fontFamily, fontWeight] = fontValue.split('|');
+            document.documentElement.style.setProperty('--subtitle-font-family', fontFamily);
+            document.documentElement.style.setProperty('--subtitle-font-weight', fontWeight);
+            localStorage.setItem('subtitleFontFamily', fontValue);
+        });
+        
+        primaryTargetLangSelect.addEventListener('change', saveTranslationSettings);
+        vietnameseTargetLangsContainer.addEventListener('change', saveTranslationSettings);
 
         // --- Resizer Logic ---
         function initResizer() {
-            const resizer = document.getElementById('resizer');
-            const controlPanel = document.getElementById('control-panel');
+            if (!resizer) return;
             const mainContainer = document.getElementById('main-container');
 
             const savedWidth = localStorage.getItem('sidebarWidth');
@@ -601,10 +911,8 @@
             const mouseDownHandler = (e) => {
                 x = e.clientX;
                 sidebarWidth = controlPanel.getBoundingClientRect().width;
-
                 document.addEventListener('mousemove', mouseMoveHandler);
                 document.addEventListener('mouseup', mouseUpHandler);
-                
                 document.body.style.userSelect = 'none';
                 document.body.style.pointerEvents = 'none';
             };
@@ -612,10 +920,8 @@
             const mouseMoveHandler = (e) => {
                 const dx = e.clientX - x;
                 const newSidebarWidth = sidebarWidth + dx;
-                
                 const minWidth = 300;
                 const maxWidth = mainContainer.clientWidth - 400;
-
                 if (newSidebarWidth > minWidth && newSidebarWidth < maxWidth) {
                     controlPanel.style.width = `${newSidebarWidth}px`;
                 }
@@ -623,10 +929,8 @@
 
             const mouseUpHandler = () => {
                 localStorage.setItem('sidebarWidth', controlPanel.style.width);
-
                 document.removeEventListener('mousemove', mouseMoveHandler);
                 document.removeEventListener('mouseup', mouseUpHandler);
-                
                 document.body.style.userSelect = '';
                 document.body.style.pointerEvents = '';
             };
@@ -636,4 +940,3 @@
     </script>
 </body>
 </html>
-
