@@ -37,8 +37,6 @@
         }
         #resizer { flex-shrink: 0; }
         #main-content { min-width: 0; }
-        #media-wrapper { flex: 1; min-height: 0; }
-        #mediaPlayer { object-fit: contain; }
         .tab-button.active { border-color: #3b82f6; color: #eff6ff; }
         
         /* Subtitle Column Styling */
@@ -66,8 +64,14 @@
         .subtitle-line.highlight {
             background-color: #1d4ed8; /* blue-700 */
             color: white;
-            font-weight: bold;
+            
+            /*font-weight: bold;*/
         }
+        
+        /* Updated styles for vertical resizing */
+        #media-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+        #media-wrapper { flex-grow: 1; min-height: 0; }
+        #mediaPlayer { object-fit: contain; }
 
         /* Responsive Layout Logic */
         html, body { min-height: 100%; }
@@ -142,7 +146,7 @@
                     <div class="space-y-3">
                         <div>
                             <label for="fontSizeSlider" class="text-xs">Cỡ chữ: <span id="fontSizeValue">14</span>px</label>
-                            <input type="range" id="fontSizeSlider" min="12" max="24" value="14" class="w-full">
+                            <input type="range" id="fontSizeSlider" min="8" max="32" value="14" class="w-full">
                         </div>
                         <div>
                             <label for="fontFamilySelect" class="text-xs">Font chữ</label>
@@ -191,16 +195,27 @@
             <div id="resizer" class="hidden lg:block w-2 cursor-col-resize bg-gray-700 hover:bg-blue-600 transition-colors rounded-full mx-1"></div>
 
             <main id="main-content" class="lg:flex-1 flex flex-col p-0 lg:pl-2 h-full">
-                <div id="media-wrapper" class="bg-black rounded-lg shadow-lg overflow-hidden w-full flex items-center justify-center">
-                    <video id="mediaPlayer" class="max-w-full max-h-full" controls></video>
+                <div id="media-pane" class="flex-1 flex flex-col min-h-0">
+                    <div id="media-wrapper" class="bg-black rounded-lg shadow-lg overflow-hidden w-full flex-1 flex items-center justify-center min-h-0">
+                        <video id="mediaPlayer" class="max-w-full max-h-full" controls></video>
+                    </div>
+
+                    <div id="media-controls" class="flex items-center justify-center gap-4 py-1 flex-shrink-0">
+    <button id="rewind30Btn" class="text-gray-400 hover:text-white text-xl p-2" title="Tua lại 30 giây"><i class="fas fa-fast-backward"></i></button>
+    <button id="rewindBtn" class="text-gray-400 hover:text-white text-xl p-2" title="Tua lại 10 giây"><i class="fas fa-backward"></i></button>
+    
+    <button id="playPauseBtn" class="text-gray-200 hover:text-white text-3xl p-2" title="Phát/Tạm dừng">
+        <i class="fas fa-play"></i>
+    </button>
+    
+    <button id="forwardBtn" class="text-gray-400 hover:text-white text-xl p-2" title="Tua tới 10 giây"><i class="fas fa-forward"></i></button>
+    <button id="forward30Btn" class="text-gray-400 hover:text-white text-xl p-2" title="Tua tới 30 giây"><i class="fas fa-fast-forward"></i></button>
+</div>
                 </div>
-                <div id="media-controls" class="flex items-center justify-center gap-2 py-1 flex-shrink-0">
-                    <button id="rewind30Btn" class="text-gray-400 hover:text-white text-xl p-2" title="Tua lại 30 giây"><i class="fas fa-fast-backward"></i></button>
-                    <button id="rewindBtn" class="text-gray-400 hover:text-white text-xl p-2" title="Tua lại 10 giây"><i class="fas fa-backward"></i></button>
-                    <button id="forwardBtn" class="text-gray-400 hover:text-white text-xl p-2" title="Tua tới 10 giây"><i class="fas fa-forward"></i></button>
-                    <button id="forward30Btn" class="text-gray-400 hover:text-white text-xl p-2" title="Tua tới 30 giây"><i class="fas fa-fast-forward"></i></button>
-                </div>
-                <div id="subtitleContainer" class="p-4 bg-gray-800 rounded-lg w-full flex-shrink-0 h-48 flex gap-4 overflow-hidden">
+
+                <div id="v-resizer" class="h-2 cursor-row-resize bg-gray-700 hover:bg-blue-600 transition-colors flex-shrink-0"></div>
+                
+                <div id="subtitleContainer" class="p-4 bg-gray-800 rounded-lg w-full flex-shrink-0 flex gap-4 overflow-hidden" style="height: 25%;">
                     <div id="sub-column-1" class="subtitle-column hidden"></div>
                     <div id="sub-column-2" class="subtitle-column hidden"></div>
                     <div id="sub-column-3" class="subtitle-column hidden"></div>
@@ -209,7 +224,6 @@
         </div>
     </div>
 
-    <!-- Modal tra cứu từ -->
     <div id="dictionaryModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 hidden">
         <div class="bg-gray-800 rounded-lg shadow-2xl w-full max-w-2xl text-white relative max-h-[95vh] flex flex-col border border-gray-600">
              <div class="flex items-center justify-between p-4 bg-gray-700 rounded-t-lg">
@@ -228,7 +242,7 @@
         const mediaPlayer = document.getElementById('mediaPlayer');
         const mediaUrlInput = document.getElementById('mediaUrl');
         const mediaFileInput = document.getElementById('mediaFile');
-        
+const playPauseBtn = document.getElementById('playPauseBtn'); // <-- Thêm dòng này
         const subtitleInputs = [
             { file: document.getElementById('srtFile1'), lang: document.getElementById('languageSelect1'), column: document.getElementById('sub-column-1'), data: [], currentIndex: -1 },
             { file: document.getElementById('srtFile2'), lang: document.getElementById('languageSelect2'), column: document.getElementById('sub-column-2'), data: [], currentIndex: -1 },
@@ -263,6 +277,8 @@
         const subtitleContainer = document.getElementById('subtitleContainer');
         const primaryTargetLangSelect = document.getElementById('primaryTargetLang');
         const vietnameseTargetLangsContainer = document.getElementById('vietnameseTargetLangs');
+        const vResizer = document.getElementById('v-resizer');
+        const mediaPane = document.getElementById('media-pane');
 
 
         let historyMap = new Map();
@@ -558,7 +574,7 @@
             geminiResultContainer.innerHTML = `<p class="italic">Đang hỏi Gemini...</p>`;
 
             const prompt = `Phân tích chi tiết về từ "${word}" trong ${langName}. Cung cấp các thông tin sau theo định dạng Markdown:\n- **Trọng âm:** (Ghi rõ âm tiết nhấn trọng âm)\n- **Nghĩa:** (Ghi ngắn gọn các nghĩa của từ)\n- **Ví dụ:** (Cung cấp 2-3 câu ví dụ có cả bản gốc và bản dịch tiếng Việt)\n- **Ngữ pháp:** (Loại từ, cách dùng cơ bản, các lưu ý nếu có)`;
-            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
 
             try {
                 const response = await fetch(API_URL, {
@@ -750,6 +766,118 @@
             fontFamilySelect.value = fontValue;
         }
 
+        // --- BẮT ĐẦU KHỐI MÃ RESIZER DỌC ---
+        function applyVerticalLayout() {
+            const mainContent = document.getElementById('main-content');
+            const savedPercentage = localStorage.getItem('subtitleHeightPercentage');
+            if (savedPercentage && mainContent) {
+                const percentage = parseFloat(savedPercentage);
+                const mainHeight = mainContent.clientHeight;
+                
+                const resizerHeight = vResizer.clientHeight;
+                const availableHeight = mainHeight - resizerHeight;
+
+                const subHeight = availableHeight * (percentage / 100);
+                const mediaHeight = availableHeight - subHeight;
+
+                subtitleContainer.style.height = `${subHeight}px`;
+                mediaPane.style.height = `${mediaHeight}px`;
+            }
+        }
+
+        function initVerticalResizer() {
+            if (!vResizer) return;
+            const mainContent = document.getElementById('main-content');
+            
+            let y = 0;
+            let mediaPaneHeight = 0;
+            let subtitleContainerHeight = 0;
+
+            const mouseDownHandler = (e) => {
+                y = e.clientY;
+                mediaPaneHeight = mediaPane.getBoundingClientRect().height;
+                subtitleContainerHeight = subtitleContainer.getBoundingClientRect().height;
+
+                document.addEventListener('mousemove', mouseMoveHandler);
+                document.addEventListener('mouseup', mouseUpHandler);
+                document.body.style.userSelect = 'none';
+                document.body.style.pointerEvents = 'none';
+            };
+
+            const mouseMoveHandler = (e) => {
+                const dy = e.clientY - y;
+                const newMediaHeight = mediaPaneHeight + dy;
+                const newSubtitleHeight = subtitleContainerHeight - dy;
+                const minHeight = 80; // Chiều cao tối thiểu cho mỗi vùng (pixel)
+
+                if (newMediaHeight > minHeight && newSubtitleHeight > minHeight) {
+                    mediaPane.style.height = `${newMediaHeight}px`;
+                    subtitleContainer.style.height = `${newSubtitleHeight}px`;
+                }
+            };
+
+            const mouseUpHandler = () => {
+                // Lưu tỷ lệ vào localStorage
+                const mainHeight = mainContent.clientHeight;
+                if (mainHeight > 0) {
+                     const subHeight = subtitleContainer.getBoundingClientRect().height;
+                     const percentage = (subHeight / mainHeight) * 100;
+                     localStorage.setItem('subtitleHeightPercentage', percentage.toFixed(2));
+                }
+               
+                document.removeEventListener('mousemove', mouseMoveHandler);
+                document.removeEventListener('mouseup', mouseUpHandler);
+                document.body.style.userSelect = '';
+                document.body.style.pointerEvents = '';
+            };
+
+            vResizer.addEventListener('mousedown', mouseDownHandler);
+        }
+        // --- KẾT THÚC KHỐI MÃ RESIZER DỌC ---
+
+        // --- Resizer Logic ---
+        function initResizer() {
+            if (!resizer) return;
+            const mainContainer = document.getElementById('main-container');
+
+            const savedWidth = localStorage.getItem('sidebarWidth');
+            if (savedWidth) {
+                controlPanel.style.width = savedWidth;
+            }
+
+            let x = 0;
+            let sidebarWidth = 0;
+
+            const mouseDownHandler = (e) => {
+                x = e.clientX;
+                sidebarWidth = controlPanel.getBoundingClientRect().width;
+                document.addEventListener('mousemove', mouseMoveHandler);
+                document.addEventListener('mouseup', mouseUpHandler);
+                document.body.style.userSelect = 'none';
+                document.body.style.pointerEvents = 'none';
+            };
+
+            const mouseMoveHandler = (e) => {
+                const dx = e.clientX - x;
+                const newSidebarWidth = sidebarWidth + dx;
+                const minWidth = 300;
+                const maxWidth = mainContainer.clientWidth - 400;
+                if (newSidebarWidth > minWidth && newSidebarWidth < maxWidth) {
+                    controlPanel.style.width = `${newSidebarWidth}px`;
+                }
+            };
+
+            const mouseUpHandler = () => {
+                localStorage.setItem('sidebarWidth', controlPanel.style.width);
+                document.removeEventListener('mousemove', mouseMoveHandler);
+                document.removeEventListener('mouseup', mouseUpHandler);
+                document.body.style.userSelect = '';
+                document.body.style.pointerEvents = '';
+            };
+
+            resizer.addEventListener('mousedown', mouseDownHandler);
+        }
+
         // --- Event Listeners ---
         document.addEventListener('DOMContentLoaded', () => {
             populateLanguageSelectors();
@@ -767,6 +895,8 @@
             }
             
             initResizer();
+            applyVerticalLayout(); // Áp dụng tỷ lệ đã lưu
+            initVerticalResizer(); // Kích hoạt thanh kéo dọc
         });
 
         saveApiKeyBtn.addEventListener('click', saveApiKey);
@@ -809,6 +939,29 @@
         });
 
         mediaPlayer.addEventListener('timeupdate', updateAllSubtitles);
+
+// --- BẮT ĐẦU THÊM MỚI ---
+const playPauseIcon = playPauseBtn.querySelector('i');
+
+playPauseBtn.addEventListener('click', () => {
+    if (mediaPlayer.paused || mediaPlayer.ended) {
+        mediaPlayer.play();
+    } else {
+        mediaPlayer.pause();
+    }
+});
+
+mediaPlayer.addEventListener('play', () => {
+    playPauseIcon.classList.remove('fa-play');
+    playPauseIcon.classList.add('fa-pause');
+});
+
+mediaPlayer.addEventListener('pause', () => {
+    playPauseIcon.classList.remove('fa-pause');
+    playPauseIcon.classList.add('fa-play');
+});
+// --- KẾT THÚC THÊM MỚI ---
+
         closeModalBtn.addEventListener('click', closeModal);
         modal.addEventListener('click', (event) => {
             if (event.target === modal) {
@@ -894,49 +1047,6 @@
         
         primaryTargetLangSelect.addEventListener('change', saveTranslationSettings);
         vietnameseTargetLangsContainer.addEventListener('change', saveTranslationSettings);
-
-        // --- Resizer Logic ---
-        function initResizer() {
-            if (!resizer) return;
-            const mainContainer = document.getElementById('main-container');
-
-            const savedWidth = localStorage.getItem('sidebarWidth');
-            if (savedWidth) {
-                controlPanel.style.width = savedWidth;
-            }
-
-            let x = 0;
-            let sidebarWidth = 0;
-
-            const mouseDownHandler = (e) => {
-                x = e.clientX;
-                sidebarWidth = controlPanel.getBoundingClientRect().width;
-                document.addEventListener('mousemove', mouseMoveHandler);
-                document.addEventListener('mouseup', mouseUpHandler);
-                document.body.style.userSelect = 'none';
-                document.body.style.pointerEvents = 'none';
-            };
-
-            const mouseMoveHandler = (e) => {
-                const dx = e.clientX - x;
-                const newSidebarWidth = sidebarWidth + dx;
-                const minWidth = 300;
-                const maxWidth = mainContainer.clientWidth - 400;
-                if (newSidebarWidth > minWidth && newSidebarWidth < maxWidth) {
-                    controlPanel.style.width = `${newSidebarWidth}px`;
-                }
-            };
-
-            const mouseUpHandler = () => {
-                localStorage.setItem('sidebarWidth', controlPanel.style.width);
-                document.removeEventListener('mousemove', mouseMoveHandler);
-                document.removeEventListener('mouseup', mouseUpHandler);
-                document.body.style.userSelect = '';
-                document.body.style.pointerEvents = '';
-            };
-
-            resizer.addEventListener('mousedown', mouseDownHandler);
-        }
     </script>
 </body>
 </html>
